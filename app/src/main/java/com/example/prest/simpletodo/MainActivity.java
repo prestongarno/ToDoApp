@@ -3,6 +3,7 @@ package com.example.prest.simpletodo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
@@ -34,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView noNotesMessage;
     private Handler toFadeToolbar;
     private Runnable runFadeToolbar;
+    private final static float OPAQUE = 0.3f;
+    private SearchView searchViewButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         setupToolbar(toolbar);
         setSupportActionBar(toolbar);
 
+
         //adding items to the listview
         items = new ArrayList<>();
         lvItems = (ListView) findViewById(R.id.lvItems);
@@ -63,27 +67,34 @@ public class MainActivity extends AppCompatActivity {
 
         //set up fade out toolbar
         toFadeToolbar = new Handler();
+
         runFadeToolbar = new Runnable() {
             @Override
             public void run() {
-                Util.getInstance().fadeToHalfTransparent(findViewById(R.id.toolbar));
-                toolbar.getBackground().setAlpha(75);
+                Toolbar t = (Toolbar) findViewById(R.id.toolbar);
+                Util.getInstance().fadeToHalfTransparent(t);
+                t.setAlpha(MainActivity.OPAQUE);
             }
         };
+
+        //start the timer at the start of the application
+        toFadeToolbar.postDelayed(runFadeToolbar, 2000);
+
+        //attach listeners
         toolbar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try{
                     toFadeToolbar.removeCallbacks(runFadeToolbar);
                 } catch (NullPointerException n) {
-
+                    Toast.makeText(getApplicationContext(), "null callbacks removed", Toast.LENGTH_SHORT).show();
                 }
 
-                if(v.getAlpha() < 1.0) {
-                    v.startAnimation(AnimationUtils.loadAnimation(getParent(), R.anim.fade_from_half_transparent));
-                    v.getBackground().setAlpha(255);
-                } else {
-                    v.getBackground().setAlpha(255);
+                if (v.getAlpha() == 1){
+                    toFadeToolbar.removeCallbacks(runFadeToolbar);
+                    toFadeToolbar.postDelayed(runFadeToolbar, 5000);
+                }else  {
+                    v.setAlpha(1f);
                     toFadeToolbar.postDelayed(runFadeToolbar, 5000);
                 }
 

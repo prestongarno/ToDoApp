@@ -81,4 +81,7 @@ public class Util {
     public void fadeToHalfTransparent(View v) {
         v.startAnimation(AnimationUtils.loadAnimation(v.getContext(), R.anim.fade_to_half_transparent));
     }
+    public void fadeFromHalfTransparent(View v) {
+        v.startAnimation(AnimationUtils.loadAnimation(v.getContext(), R.anim.fade_from_half_transparent));
+    }
 }

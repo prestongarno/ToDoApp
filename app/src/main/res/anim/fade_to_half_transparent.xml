@@ -3,4 +3,4 @@
     android:id="@+id/fade_to_half_transparent"
     android:interpolator="@android:anim/accelerate_interpolator"
     android:fromAlpha="1.0" android:toAlpha="0.3"
-    android:duration="1000" />
+    android:duration="1500" />
