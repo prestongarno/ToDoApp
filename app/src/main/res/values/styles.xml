@@ -14,4 +14,10 @@
         <item name="android:actionMenuTextColor">@color/textColor</item>
         <item name="android:textColor">@color/textColor</item>
     </style>
+
+    <style name="listview_widget_style" parent="@android:style/Widget">
+        <item name="android:background">@drawable/drawable_additem</item>
+        <item name="android:textColor">@color/textColor</item>
+    </style>
+
 </resources>

@@ -1,12 +1,16 @@
 package com.example.prest.simpletodo;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
@@ -17,19 +21,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     //instance variables
-    private ArrayList<String> items;
-    private ArrayAdapter<String> itemsAdapter;
+    private ArrayList<note> items;
+    private ArrayAdapter<note> itemsAdapter;
     private ListView lvItems;
+
     private Toolbar toolbar;
     private RelativeLayout mainLayout;
     private TextView noNotesMessage;
@@ -43,30 +44,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //get the main layout
+        //get the main layout, get handles for each of the items we need to access
         mainLayout = (RelativeLayout) this.findViewById(R.id.activity_main);
         noNotesMessage = new TextView(this);
         noNotesMessage.setText("No Notes");
         noNotesMessage.setTextColor(0xFFFFFF);
         setBackgroundToNoNotes();
 
+        //setup the toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setupToolbar(toolbar);
         setSupportActionBar(toolbar);
-
-
-        //adding items to the listview
-        items = new ArrayList<>();
-        lvItems = (ListView) findViewById(R.id.lvItems);
-        readItems();
-        itemsAdapter = new ArrayAdapter<>(this, R.layout.text_list, items);
-        lvItems.setAdapter(itemsAdapter);
-        //attach longClicklistener
-        setupListViewListener();
-        hideOrShowNoNotesMessage();
-
-        //set up fade out toolbar
         toFadeToolbar = new Handler();
+
+        setupListView();
 
         runFadeToolbar = new Runnable() {
             @Override
@@ -118,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
                 //drop focus off of the keyboard and close it
                 etNewItem.clearFocus();
                 Util.getInstance().hideKeyboard(this);
-                itemsAdapter.add(itemText);
+
+                //add to the adapter
+                itemsAdapter.add(new note(itemText));
                 etNewItem.setText("");
                 writeItems();
                 hideOrShowNoNotesMessage();
@@ -130,6 +123,22 @@ public class MainActivity extends AppCompatActivity {
         } catch (NullPointerException n) {
             Toast.makeText(getApplicationContext(), n.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void setupListView(){
+        //adding items to the listview --> move to it's own method to setup
+        items = new ArrayList<>();
+        lvItems = (ListView) findViewById(R.id.lvItems);
+        readItems();
+
+        //currently uses (context, int resource, List<>)
+        //need to use ArrayAdapter(context, int resource, int textViewResourceId, List<T> objects)
+        itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
+        lvItems.setAdapter(itemsAdapter);
+
+        //attach longClicklistener
+        setupListViewListener();
+        hideOrShowNoNotesMessage();
     }
 
     private void setupListViewListener() {
@@ -158,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
     //methods for reading and writing apps
     private void readItems() {
-        File filesDir = getFilesDir();
+/*        File filesDir = getFilesDir();
         File toDoFile = new File(filesDir, "todo.txt");
 
         try {
@@ -171,18 +180,18 @@ public class MainActivity extends AppCompatActivity {
             //itemsAdapter.add("Error reading the old notes from file\nDon't know what's wrong with this exactly...");
             Toast.makeText(getApplicationContext(), "Error loading notes!", Toast.LENGTH_SHORT).show();
             Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        }*/
     }
 
     private void writeItems(){
-        File filesDir = getFilesDir();
+/*        File filesDir = getFilesDir();
         File todoFile = new File(filesDir, "todo.txt");
 
         try {
             FileUtils.writeLines(todoFile, items);
         } catch (IOException e) {
             Toast.makeText(getApplicationContext(), "Error saving data!", Toast.LENGTH_LONG).show();
-        }
+        }*/
     }
 
     @Override
@@ -252,6 +261,40 @@ public class MainActivity extends AppCompatActivity {
                 noNotesMessage.setVisibility(View.VISIBLE);
             }
 
+        }
+    }
+
+    //private extension of arrayadapter to easily update the listview
+    private class CustomListViewAdapter extends ArrayAdapter {
+
+        //private final Activity activity;
+        private final ArrayList<note> notes;
+        private final Activity activity;
+
+        public CustomListViewAdapter(Context context, int resource, List notes, Activity activity) {
+            super(context, resource, notes);
+            this.activity = activity;
+
+            this.notes = (ArrayList<note>) notes;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent){
+            View customView = convertView;
+
+            if(customView == null) {
+                //get activity layout inflater
+                LayoutInflater inflater = activity.getLayoutInflater();
+                customView = inflater.inflate(R.layout.list_view_item_layout, null);
+
+                //get index of the new object and set the text
+                TextView title = (TextView) customView.findViewById(R.id.textView_note_title);
+                TextView description = (TextView) customView.findViewById(R.id.note_description);
+                title.setText(notes.get(position).getTitle());
+                description.setText(notes.get(position).getDescription());
+            }
+            //return the view
+            return customView;
         }
     }
 

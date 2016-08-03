@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/listview_widget_style"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/list_view_item_layout"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New Text"
+        android:id="@+id/textView_note_title"
+        android:layout_alignParentTop="true"
+        android:textSize="@dimen/regular_display_text_size"
+        android:padding="10dp"
+        />
+
+    <TextView
+        android:id="@+id/note_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/tap_to_add_a_description"
+        android:layout_below="@id/textView_note_title"
+        android:padding="5dp"
+        />
+
+    <CheckBox
+        android:id="@+id/selector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignBottom="@id/note_description"
+        android:layout_alignTop="@+id/textView_note_title"
+        android:padding="10dp"
+        android:visibility="visible"
+        android:scaleX="1.5"
+        android:scaleY="1.5"
+        />
+</RelativeLayout>

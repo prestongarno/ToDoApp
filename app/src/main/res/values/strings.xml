@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">To Do List</string>
     <string name="darkToolbarTheme">darkToolbarTheme</string>
+    <string name="tap_to_add_a_description">tap note to add a description</string>
 </resources>
