@@ -5,6 +5,10 @@
     <item android:title="Sort"
         app:showAsAction="never"
         />
+    <item android:title="Sync notes"
+        android:id="@+id/sync_notes"
+        app:showAsAction="never"
+        />
     <item android:title="Settings"
         app:showAsAction="never"/>
     <item
