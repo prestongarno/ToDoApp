@@ -3,26 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:title="Delete"
-        android:id="@+id/delete_note"
+        android:id="@+id/main_menu_delete_note"
         app:showAsAction="always"
         android:visible="false"
         android:icon="@mipmap/ic_action_action_delete">
     </item>
     <item android:title="Sync notes"
-        android:id="@+id/sync_notes"
+        android:id="@+id/main_menu_sync_notes"
         app:showAsAction="never"
         />
     <item android:title="Refresh"
-        android:id="@+id/load_notes"
+        android:id="@+id/main_menu_load_notes"
         app:showAsAction="never"
         />
     <item android:title="Sort"
         app:showAsAction="never"
+        android:id="@+id/main_menu_sort_notes"
         />
     <item android:title="Settings"
-        app:showAsAction="never"/>
+        app:showAsAction="never"
+        android:id="@+id/main_menu_settings"/>
     <item
-        android:id="@+id/action_search"
+        android:id="@+id/main_menu_action_search"
         android:orderInCategory="200"
         android:icon="@drawable/abc_ic_search_api_mtrl_alpha"
         android:title="Search"

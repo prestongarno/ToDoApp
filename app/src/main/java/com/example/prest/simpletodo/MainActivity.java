@@ -36,9 +36,9 @@ public class MainActivity extends AppCompatActivity {
     //instance variables
     private ArrayList<note> items;
     private CustomListViewAdapter itemsAdapter;
-    private ListView lvItems;
+    private ListView act_main_lv_Items;
 
-    private Toolbar toolbar;
+    private Toolbar act_main_toolbar;
     private Menu mainActivityMenu;
     private RelativeLayout mainLayout;
     private TextView noNotesMessage;
@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Runnable runFadeToolbar;
     private SwipeRefreshLayout loader;
     private Handler mainHandler;
+    private MenuItem deleteButton;
     public final static String TAG = "MainActivity";
     private final static float OPAQUE = 0.3f;
 
@@ -66,10 +67,10 @@ public class MainActivity extends AppCompatActivity {
         noNotesMessage.setTextColor(0xFFFFFF);
         setBackgroundToNoNotes();
 
-        //setup the toolbar
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setupToolbar(toolbar);
-        setSupportActionBar(toolbar);
+        //setup the act_main_toolbar
+        act_main_toolbar = (Toolbar) findViewById(R.id.act_main_toolbar);
+        setupToolbar(act_main_toolbar);
+        setSupportActionBar(act_main_toolbar);
         toFadeToolbar = new Handler();
 
         //instantiate main handler
@@ -80,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         runFadeToolbar = new Runnable() {
             @Override
             public void run() {
-                Toolbar t = (Toolbar) findViewById(R.id.toolbar);
+                Toolbar t = (Toolbar) findViewById(R.id.act_main_toolbar);
                 Util.getInstance().fadeToHalfTransparent(t);
                 t.setAlpha(MainActivity.OPAQUE);
             }
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         toFadeToolbar.postDelayed(runFadeToolbar, 2000);
 
         //attach listeners
-        toolbar.setOnClickListener(new View.OnClickListener() {
+        act_main_toolbar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try{
@@ -121,17 +122,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            // Respond to the toolbar's NavigationIcon as up/home button
-            case R.id.sync_notes:
+            // Respond to the act_main_toolbar's NavigationIcon as up/home button
+            case R.id.main_menu_sync_notes:
                 this.writeItems();
                 return true;
-            case R.id.load_notes:
+            case R.id.main_menu_load_notes:
                 this.readItems();
                 return true;
-            case R.id.delete_note:
+            case R.id.main_menu_delete_note:
                 itemsAdapter.deleteSelected();
                 itemsAdapter.notifyDataSetChanged();
                 item.setVisible(false);
+                hideOrShowNoNotesMessage();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -145,27 +147,44 @@ public class MainActivity extends AppCompatActivity {
 
     public void onAddItem(View v) {
 
-        EditText etNewItem = (EditText) findViewById(R.id.etNewItem);
+        EditText act_main_et_new_item = (EditText) findViewById(R.id.act_main_et_new_item);
         String itemText = null;
         try {
-            itemText = etNewItem.getText().toString();
+            itemText = act_main_et_new_item.getText().toString();
             itemText = itemText.trim();
-            if(!itemText.equals("")) {
+            if(!itemText.equals("") && !itemText.equals("&-#-#-#-&")) {
                 //drop focus off of the keyboard and close it
-                etNewItem.clearFocus();
+                act_main_et_new_item.clearFocus();
                 Util.getInstance().hideKeyboard(this);
                 //add to the adapter
                 items.add(new note(itemText, "tap here to add a description..."));
-                etNewItem.setText("");
+                act_main_et_new_item.setText("");
                 //update the adapter
                 itemsAdapter.notifyDataSetChanged();
                 hideOrShowNoNotesMessage();
             } else {
                 Toast.makeText(getApplicationContext(), "Enter a note!", Toast.LENGTH_SHORT).show();
             }
-
-
         } catch (NullPointerException n) {
+
+        }
+    }
+
+    private void setDeleteMode(boolean state){
+        if(state) {
+            deleteButton.setVisible(true);
+            itemsAdapter.displayAllCheckBoxes(true);
+        } else if (!state) {
+            deleteButton.setVisible(false);
+            itemsAdapter.displayAllCheckBoxes(false);
+        }
+    }
+
+    private boolean isListInDeleteMode(){
+        if(deleteButton.isVisible()) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -174,10 +193,10 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             try{
                 items = savedInstanceState.getParcelableArrayList("notes");
-                lvItems = (ListView) findViewById(R.id.lvItems);
+                act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
                 itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
-                lvItems.setAdapter(itemsAdapter);
-                itemsAdapter.setListViewReferenceHandle(lvItems);
+                act_main_lv_Items.setAdapter(itemsAdapter);
+                itemsAdapter.setListViewReferenceHandle(act_main_lv_Items);
                 itemsAdapter.notifyDataSetChanged();
             } catch (Exception e) {
                 Util.getInstance().printStackTrace(e, TAG);
@@ -185,32 +204,33 @@ public class MainActivity extends AppCompatActivity {
         } else if (items == null){
             //adding items to the listview --> move to it's own method to setup
             items = new ArrayList<>();
-            lvItems = (ListView) findViewById(R.id.lvItems);
+            act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
             itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
-            lvItems.setAdapter(itemsAdapter);
-            itemsAdapter.setListViewReferenceHandle(lvItems);
+            act_main_lv_Items.setAdapter(itemsAdapter);
+            itemsAdapter.setListViewReferenceHandle(act_main_lv_Items);
         } else {
             //adding items to the listview --> move to it's own method to setup
             items = new ArrayList<>();
-            lvItems = (ListView) findViewById(R.id.lvItems);
+            act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
             itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
-            lvItems.setAdapter(itemsAdapter);
-            itemsAdapter.setListViewReferenceHandle(lvItems);
+            act_main_lv_Items.setAdapter(itemsAdapter);
+            itemsAdapter.setListViewReferenceHandle(act_main_lv_Items);
             readItems();
         }
 
-        setupListViewListener();
+        this.addInitialTestNotes();
+        deleteButton = getMainActivityMenu().findItem(R.id.main_menu_delete_note);
+        setupListViewListener(deleteButton);
         hideOrShowNoNotesMessage();
     }
 
-    private void setupListViewListener() {
-        lvItems.setOnItemLongClickListener(
+    private void setupListViewListener(final MenuItem deleteButton) {
+        act_main_lv_Items.setOnItemLongClickListener(
                 new AdapterView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> adapter, View item, int pos, long id) {
-                        itemsAdapter.setSelected(pos);
-                        itemsAdapter.displayAllCheckBoxes();
-                        MenuItem deleteButton = getMainActivityMenu().findItem(R.id.delete_note);
+                        itemsAdapter.setCheckBoxSelected(pos);
+                        itemsAdapter.displayAllCheckBoxes(itemsAdapter.isInDeleteMode());
 
                         if(deleteButton.isVisible()) {
                             deleteButton.setVisible(false);
@@ -221,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                     }
                 });
-        loader = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        loader = (SwipeRefreshLayout) findViewById(R.id.act_main_swipe_refresh);
         if (loader != null) {
             //implement action interface listener
             loader.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -239,6 +259,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
+        //onClickListener
+        act_main_lv_Items.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(itemsAdapter.isInDeleteMode()) {
+                    itemsAdapter.setCheckBoxSelected(act_main_lv_Items.getSelectedItemPosition());
+                } else {
+                    //inflate the selected item's edit layout/start activity
+                }
+            }
+        });
     }
 
     private void readItems() {
@@ -259,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
                 items.add(new note(read[0], read[1], new simpleDateString(read[2])));
             }
             itemsAdapter.notifyDataSetChanged();
-            lvItems.setAdapter(itemsAdapter);
+            act_main_lv_Items.setAdapter(itemsAdapter);
         } catch (Exception e) {
             items = tempArrayList;
             itemsAdapter.notifyDataSetChanged();
@@ -310,38 +342,38 @@ public class MainActivity extends AppCompatActivity {
 
         if(!items.isEmpty()) {
 
-            if(!lvItems.isShown()){;
+            if(!act_main_lv_Items.isShown()){;
                 noNotesMessage.setAnimation(fadeOut);
                 noNotesMessage.startAnimation(fadeOut);
-                lvItems.setAnimation(fadeIn);
-                lvItems.startAnimation(fadeOut);
+                act_main_lv_Items.setAnimation(fadeIn);
+                act_main_lv_Items.startAnimation(fadeOut);
                 noNotesMessage.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         noNotesMessage.setVisibility(View.INVISIBLE);
-                        lvItems.setVisibility(View.VISIBLE);
+                        act_main_lv_Items.setVisibility(View.VISIBLE);
                     }
                 }, 800);
             } else {
-                lvItems.setVisibility(View.VISIBLE);
+                act_main_lv_Items.setVisibility(View.VISIBLE);
                 noNotesMessage.setVisibility(View.INVISIBLE);
             }
 
         } else {
-            if(lvItems.isShown()){
+            if(act_main_lv_Items.isShown()){
                 noNotesMessage.setAnimation(fadeOut);
                 noNotesMessage.startAnimation(fadeOut);
-                lvItems.setAnimation(fadeIn);
-                lvItems.startAnimation(fadeOut);
+                act_main_lv_Items.setAnimation(fadeIn);
+                act_main_lv_Items.startAnimation(fadeOut);
                 noNotesMessage.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         noNotesMessage.setVisibility(View.VISIBLE);
-                        lvItems.setVisibility(View.INVISIBLE);
+                        act_main_lv_Items.setVisibility(View.INVISIBLE);
                     }
                 }, 800);
             } else {
-                lvItems.setVisibility(View.INVISIBLE);
+                act_main_lv_Items.setVisibility(View.INVISIBLE);
                 noNotesMessage.setVisibility(View.VISIBLE);
             }
 
@@ -358,6 +390,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void addInitialTestNotes(){
+        //add a few notes to the application until read() and write() are working
+        if(items.isEmpty()) {
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    items.add(new note("This is the first test note!", "the description for the first note", new simpleDateString("04/24/1995")));
+                    itemsAdapter.notifyDataSetChanged();
+                }
+            }, 2000);
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    items.add(new note("ToDo: Use Parse SDK for back end", "use local storage and cache also though!", new simpleDateString("10/16/2016")));
+                    itemsAdapter.notifyDataSetChanged();
+                }
+            }, 75);
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    items.add(new note("ToDo: write menu item functionality", "separate methods for attaching the actionListeners though"));
+                    itemsAdapter.notifyDataSetChanged();
+                }
+            }, 75);
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    items.add(new note("ToDo: learn how to efficiently use activities and fragments", "how do callback etc work between main and sub activities?"));
+                    itemsAdapter.notifyDataSetChanged();
+                }
+            }, 75);
+        }
+    }
+
     //private extension of arrayadapter to easily update the listview
     private class CustomListViewAdapter extends ArrayAdapter {
         private final ArrayList<note> notes;
@@ -365,6 +431,7 @@ public class MainActivity extends AppCompatActivity {
         private ListView theListView;
         private NotesHolder holder;
         private Context context;
+        private Toolbar t;
 
         public CustomListViewAdapter(Context context, int resource, ArrayList<note> notes, Activity activity) {
             super(context, resource, notes);
@@ -373,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
             this.context = context;
         }
 
-        public void setSelected(int index){
+        public void setCheckBoxSelected(int index){
             CheckBox c = (CheckBox) theListView.getChildAt(index).findViewById(R.id.selector);
             if (c.isChecked()){
                 c.setChecked(false);
@@ -382,14 +449,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void displayAllCheckBoxes(){
-
-
+        public void uncheckAll(){
             for(int i = 0; i < notes.size(); i++) {
                 CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
-                if (!boxesDisplayed()){
+                c.setChecked(false);
+            }
+        }
+
+        public void displayAllCheckBoxes(boolean state){
+            for(int i = 0; i < notes.size(); i++) {
+                CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
+                if (state){
                     c.setVisibility(View.VISIBLE);
-                } else if (boxesDisplayed()){
+                } else if (!state){
                     c.setVisibility(View.GONE);
                 }
             }
@@ -450,8 +522,12 @@ public class MainActivity extends AppCompatActivity {
             this.notifyDataSetChanged();
         }
 
-        public void setListViewReferenceHandle(ListView lvItems) {
-            this.theListView = lvItems;
+        public void setListViewReferenceHandle(ListView act_main_lv_Items) {
+            this.theListView = act_main_lv_Items;
+        }
+
+        public boolean isInDeleteMode(){
+            return boxesDisplayed();
         }
     }
 
@@ -461,5 +537,4 @@ public class MainActivity extends AppCompatActivity {
         CheckBox checkBox;
         TextView Date;
     }
-
 }

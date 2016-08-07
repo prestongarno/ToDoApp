@@ -1,80 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/activity_main"
     tools:context=".MainActivity">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:textColor="@color/colorPrimary"
-        android:textSize="32sp"
         android:layout_centerInParent="true"
         android:background="@color/colorPrimaryDark"
-        android:text="no notes saved"
-        android:textStyle="bold"
-        android:textIsSelectable="false"
         android:gravity="center"
-        />
+        android:text="no notes saved"
+        android:textColor="@color/colorPrimary"
+        android:textIsSelectable="false"
+        android:textSize="32sp"
+        android:textStyle="bold" />
 
     <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/act_main_swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/swipe_refresh"
-        android:layout_below="@+id/toolbar"
-        android:layout_above="@+id/btnAddItem"
-        android:background="@android:color/transparent"
-        android:layout_alignParentStart="true">
+        android:layout_above="@+id/act_main_btn_add_item"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/act_main_toolbar"
+        android:background="@android:color/transparent">
 
         <ListView
+            android:id="@+id/act_main_lv_Items"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/lvItems"
-            android:animateLayoutChanges="true"
-            android:layout_below="@+id/toolbar"
-            android:layout_above="@+id/btnAddItem"
-            android:background="@color/colorPrimaryDark"
+            android:layout_above="@+id/act_main_btn_add_item"
             android:layout_alignParentLeft="true"
-            android:visibility="invisible"
-        />
+            android:layout_below="@+id/act_main_toolbar"
+            android:animateLayoutChanges="true"
+            android:background="@color/colorPrimaryDark"
+            android:visibility="invisible" />
 
     </android.support.v4.widget.SwipeRefreshLayout>
 
     <Button
+        android:id="@+id/act_main_btn_add_item"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:id="@+id/btnAddItem"
-        android:text="Add Note"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:background="@drawable/drawable_additem"
-        android:padding="1dp"
         android:onClick="onAddItem"
-        android:textColor="@color/textColor"
-        />
+        android:padding="1dp"
+        android:text="Add Note"
+        android:textColor="@color/textColor" />
 
     <EditText
+        android:id="@+id/act_main_et_new_item"
         android:layout_width="match_parent"
         android:layout_height="16dp"
-        android:id="@+id/etNewItem"
-        android:hint="\t\tEnter note here..."
         android:layout_alignParentBottom="true"
-        android:layout_alignTop="@+id/btnAddItem"
-        android:layout_toStartOf="@+id/btnAddItem"
-        android:textColor="@color/textColor"
+        android:layout_alignTop="@+id/act_main_btn_add_item"
+        android:layout_toStartOf="@+id/act_main_btn_add_item"
         android:background="@color/colorPrimary"
-        android:textColorHint="@color/textColor"
-        android:singleLine="true"
+        android:hint="\t\tEnter note here..."
         android:padding="2dp"
         android:paddingBottom="10dp"
-        android:textSize="13sp"
-        />
+        android:singleLine="true"
+        android:textColor="@color/textColor"
+        android:textColorHint="@color/textColor"
+        android:textSize="13sp" />
 
     <include
-        android:id="@id/toolbar"
-        layout="@layout/toolbar_menu"/>
+        android:id="@id/act_main_toolbar"
+        layout="@layout/toolbar_menu" />
 
 </RelativeLayout>
