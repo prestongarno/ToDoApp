@@ -2,6 +2,7 @@ package com.example.prest.simpletodo;
 
 import android.app.Activity;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.AnimationUtils;
@@ -83,5 +84,13 @@ public class Util {
     }
     public void fadeFromHalfTransparent(View v) {
         v.startAnimation(AnimationUtils.loadAnimation(v.getContext(), R.anim.fade_from_half_transparent));
+    }
+
+    public void printStackTrace(Exception e, String TAG){
+        StackTraceElement[] ee = e.getStackTrace();
+        Log.d(TAG, "EXCEPTION: " + e.getMessage() + "\n");
+        for(StackTraceElement eee : ee) {
+            Log.d(TAG, "\t" + eee.toString());
+        }
     }
 }

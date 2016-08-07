@@ -7,31 +7,42 @@
     android:id="@+id/list_view_item_layout"
     android:background="@drawable/drawable_additem"
     android:orientation="horizontal"
-    android:gravity="start">
+    android:gravity="fill_horizontal|top">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_alignParentStart="true">
-
+        android:gravity="start"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="false"
+        android:id="@+id/left_side"
+        android:layout_toLeftOf="@+id/right_side"
+        android:layout_alignParentRight="false">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="New Text"
+            android:text="New Text Note Testing the wrap or ellipsis in"
             android:id="@+id/textView_note_title"
             android:textSize="@dimen/regular_display_text_size"
-            android:padding="5dp"
+            android:padding="2dp"
             android:textColor="@color/textColor"
+            android:scrollHorizontally="true"
+            android:maxLines="2"
+            android:ellipsize="end"
             />
 
         <TextView
             android:id="@+id/note_description"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/tap_to_add_a_description"
-            android:padding="3dp"
+            android:padding="2dp"
             android:textColor="@color/textColor"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:ellipsize="end"
             />
 
     </LinearLayout>
@@ -39,29 +50,33 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true">
+        android:id="@+id/right_side"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="false"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:gravity="center_vertical"
+        android:layout_alignBottom="@+id/left_side">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="11/11/2011"
-            android:padding="20dp"
+            android:padding="10dp"
             android:gravity="center"
             android:id="@+id/date"
-            android:textColor="@color/textColor"
-            />
+            android:textColor="@color/textColor" />
 
         <CheckBox
             android:id="@+id/selector"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:padding="5dp"
             android:scaleX="1.5"
             android:scaleY="1.5"
             android:onClick="onSelectNote"
             android:tag="toSelectNote"
             android:visibility="gone"
             />
-
     </LinearLayout>
 </RelativeLayout>

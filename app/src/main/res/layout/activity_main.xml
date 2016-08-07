@@ -25,7 +25,7 @@
         android:id="@+id/swipe_refresh"
         android:layout_below="@+id/toolbar"
         android:layout_above="@+id/btnAddItem"
-        android:background="@color/colorPrimaryDark"
+        android:background="@android:color/transparent"
         android:layout_alignParentStart="true">
 
         <ListView

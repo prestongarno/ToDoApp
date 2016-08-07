@@ -75,7 +75,7 @@ public class note implements Parcelable {
 
     @Override
     public String toString() {
-        return title + "$" + description + "$" + date.toString();
+        return title + "&-#-#-#-&" + description + "&-#-#-#-&" + date.toString();
     }
 
     public static final Creator<note> CREATOR = new Creator<note>() {

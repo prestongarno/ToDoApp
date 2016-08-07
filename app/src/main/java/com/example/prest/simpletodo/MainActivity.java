@@ -5,9 +5,9 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,11 +39,19 @@ public class MainActivity extends AppCompatActivity {
     private ListView lvItems;
 
     private Toolbar toolbar;
+    private Menu mainActivityMenu;
     private RelativeLayout mainLayout;
     private TextView noNotesMessage;
     private Handler toFadeToolbar;
     private Runnable runFadeToolbar;
+    private SwipeRefreshLayout loader;
+    private Handler mainHandler;
+    public final static String TAG = "MainActivity";
     private final static float OPAQUE = 0.3f;
+
+    public Menu getMainActivityMenu() {
+        return mainActivityMenu;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,9 @@ public class MainActivity extends AppCompatActivity {
         setupToolbar(toolbar);
         setSupportActionBar(toolbar);
         toFadeToolbar = new Handler();
+
+        //instantiate main handler
+        mainHandler = new Handler();
 
         setupListView(savedInstanceState);
 
@@ -97,23 +108,39 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        this.mainActivityMenu = menu;
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            // Respond to the toorbar's NavigationIcon as up/home button
+            // Respond to the toolbar's NavigationIcon as up/home button
             case R.id.sync_notes:
                 this.writeItems();
                 return true;
+            case R.id.load_notes:
+                this.readItems();
+                return true;
+            case R.id.delete_note:
+                itemsAdapter.deleteSelected();
+                itemsAdapter.notifyDataSetChanged();
+                item.setVisible(false);
+                return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onPause(){
+
+        super.onPause();
     }
 
     public void onAddItem(View v) {
@@ -132,7 +159,6 @@ public class MainActivity extends AppCompatActivity {
                 etNewItem.setText("");
                 //update the adapter
                 itemsAdapter.notifyDataSetChanged();
-                writeItems();
                 hideOrShowNoNotesMessage();
             } else {
                 Toast.makeText(getApplicationContext(), "Enter a note!", Toast.LENGTH_SHORT).show();
@@ -140,31 +166,39 @@ public class MainActivity extends AppCompatActivity {
 
 
         } catch (NullPointerException n) {
-            Toast.makeText(getApplicationContext(), n.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void setupListView(Bundle savedInstanceState){
         //re-put the values if the user rotates phone, switches app or whatever
         if (savedInstanceState != null) {
-            items = savedInstanceState.getParcelableArrayList("notes");
+            try{
+                items = savedInstanceState.getParcelableArrayList("notes");
+                lvItems = (ListView) findViewById(R.id.lvItems);
+                itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
+                lvItems.setAdapter(itemsAdapter);
+                itemsAdapter.setListViewReferenceHandle(lvItems);
+                itemsAdapter.notifyDataSetChanged();
+            } catch (Exception e) {
+                Util.getInstance().printStackTrace(e, TAG);
+            }
+        } else if (items == null){
+            //adding items to the listview --> move to it's own method to setup
+            items = new ArrayList<>();
             lvItems = (ListView) findViewById(R.id.lvItems);
             itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
             lvItems.setAdapter(itemsAdapter);
-            itemsAdapter.notifyDataSetChanged();
+            itemsAdapter.setListViewReferenceHandle(lvItems);
         } else {
             //adding items to the listview --> move to it's own method to setup
             items = new ArrayList<>();
             lvItems = (ListView) findViewById(R.id.lvItems);
-            readItems();
-
             itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, items, this);
             lvItems.setAdapter(itemsAdapter);
+            itemsAdapter.setListViewReferenceHandle(lvItems);
+            readItems();
         }
 
-        //setup the swipetorefresh functionality
-
-        //attach longClicklistener
         setupListViewListener();
         hideOrShowNoNotesMessage();
     }
@@ -174,31 +208,61 @@ public class MainActivity extends AppCompatActivity {
                 new AdapterView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> adapter, View item, int pos, long id) {
-                        itemsAdapter.displayAllCheckBoxes();
                         itemsAdapter.setSelected(pos);
+                        itemsAdapter.displayAllCheckBoxes();
+                        MenuItem deleteButton = getMainActivityMenu().findItem(R.id.delete_note);
+
+                        if(deleteButton.isVisible()) {
+                            deleteButton.setVisible(false);
+                        } else if (!deleteButton.isVisible()) {
+                            deleteButton.setVisible(true);
+                        }
+
                         return true;
                     }
                 });
+        loader = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        if (loader != null) {
+            //implement action interface listener
+            loader.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    int OldNoteCount = items.size();
+                    readItems();
+                    Toast.makeText(getApplicationContext(), items.size() - OldNoteCount + " new notes!", Toast.LENGTH_LONG).show();
+                    mainHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            loader.setRefreshing(false);
+                        }
+                    }, 500);
+                }
+            });
+        }
     }
 
     private void readItems() {
         File filesDir = getFilesDir();
         File toDoFile = new File(filesDir, "todo.txt");
+        ArrayList<note> tempArrayList = items;
 
         try {
 
             items.clear();
 
             List<String> itemsFromFIle = FileUtils.readLines(toDoFile);
-
+            for(String s : itemsFromFIle) {
+            }
             String[] read;
             for(int i = 0; i < itemsFromFIle.size(); i++) {
-                read = itemsFromFIle.get(i).split("$");
-                items.add(new note(read[1], read[2], new simpleDateString(read[3])));
+                read = itemsFromFIle.get(i).split("&-#-#-#-&");
+                items.add(new note(read[0], read[1], new simpleDateString(read[2])));
             }
+            itemsAdapter.notifyDataSetChanged();
+            lvItems.setAdapter(itemsAdapter);
         } catch (Exception e) {
-            Toast.makeText(this, "Error reading saved notes!", Toast.LENGTH_SHORT).show();
-            //itemsAdapter.add("Error reading the old notes from file\nDon't know what's wrong with this exactly...");
+            items = tempArrayList;
+            itemsAdapter.notifyDataSetChanged();
         }
     }
 
@@ -208,25 +272,22 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             FileUtils.writeLines(todoFile, items);
+            for (note n : items) {
+            }
         } catch (IOException e) {
             Toast.makeText(this, "Error writing notes!", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        writeItems();
-    }
-
-    @Override
     public void onStop() {
-        readItems();
+        writeItems();
         super.onStop();
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedState){
+        writeItems();
         savedState.putParcelableArrayList("notes", items);
         super.onSaveInstanceState(savedState);
     }
@@ -322,7 +383,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void displayAllCheckBoxes(){
-            for(int i = 0; i < theListView.getCount(); i++) {
+
+
+            for(int i = 0; i < notes.size(); i++) {
                 CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
                 if (!boxesDisplayed()){
                     c.setVisibility(View.VISIBLE);
@@ -330,6 +393,7 @@ public class MainActivity extends AppCompatActivity {
                     c.setVisibility(View.GONE);
                 }
             }
+
             this.notifyDataSetChanged();
         }
 
@@ -337,7 +401,6 @@ public class MainActivity extends AppCompatActivity {
             if (holder.checkBox.getVisibility() == View.VISIBLE) {
                 return true;
             } else if (holder.checkBox.getVisibility() == View.GONE) {
-                Log.d("PG35", "boxesDisplayed: FALSE");
                 return false;
             } else {
                 throw new Resources.NotFoundException("No such checkbox!");
@@ -346,7 +409,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent){
-            theListView = (ListView) parent;
+            //theListView = (ListView) parent;
             holder = null;
             if(convertView == null) {
                 //get activity layout inflater
@@ -373,6 +436,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public int getCount(){
             return notes.size();
+        }
+
+        public void deleteSelected() {
+            for(int i = 0; i < theListView.getCount(); i++) {
+                CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
+                if (!c.isChecked()){
+                    c.setVisibility(View.GONE);
+                } else if (c.isChecked()){
+                    items.remove(i);
+                }
+            }
+            this.notifyDataSetChanged();
+        }
+
+        public void setListViewReferenceHandle(ListView lvItems) {
+            this.theListView = lvItems;
         }
     }
 

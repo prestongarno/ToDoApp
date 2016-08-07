@@ -2,11 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:title="Sort"
-        app:showAsAction="never"
-        />
+    <item android:title="Delete"
+        android:id="@+id/delete_note"
+        app:showAsAction="always"
+        android:visible="false"
+        android:icon="@mipmap/ic_action_action_delete">
+    </item>
     <item android:title="Sync notes"
         android:id="@+id/sync_notes"
+        app:showAsAction="never"
+        />
+    <item android:title="Refresh"
+        android:id="@+id/load_notes"
+        app:showAsAction="never"
+        />
+    <item android:title="Sort"
         app:showAsAction="never"
         />
     <item android:title="Settings"
