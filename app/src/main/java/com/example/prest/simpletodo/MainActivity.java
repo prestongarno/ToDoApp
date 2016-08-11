@@ -16,7 +16,6 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -31,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
 
     private notesManager manager;
 
-    //private ArrayList<note> items;
     private CustomListViewAdapter itemsAdapter;
     private ListView act_main_lv_Items;
     private Toolbar act_main_toolbar;
@@ -105,21 +103,25 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             // Respond to the act_main_toolbar's NavigationIcon as up/home button
             case R.id.main_menu_sync_notes:
-                setDeleteMode(false);
+                manager.selectAllNotes(false);
+                itemsAdapter.displayCheckBoxes(false);
                 manager.saveNotes();
                 return true;
             case R.id.main_menu_load_notes:
-                setDeleteMode(false);
+                manager.selectAllNotes(false);
+                itemsAdapter.displayCheckBoxes(false);
                 manager.loadNotes();
                 itemsAdapter.notifyDataSetChanged();
-                this.setDeleteMode(false);
+                manager.selectAllNotes(false);
+                itemsAdapter.displayCheckBoxes(false);
                 return true;
             case R.id.main_menu_delete_note:
                 wakeUpToolBar(act_main_toolbar);
                 manager.deleteSelected();
                 itemsAdapter.notifyDataSetChanged();
                 item.setVisible(false);
-                setDeleteMode(false);
+                manager.selectAllNotes(false);
+                itemsAdapter.displayCheckBoxes(false);
                 hideOrShowNoNotesMessage();
                 return true;
             case R.id.main_menu_settings:
@@ -147,8 +149,10 @@ public class MainActivity extends AppCompatActivity {
             itemText = itemText.trim();
             if (!itemText.equals("") && !itemText.equals("&-#-#-#-&")) {
                 Util.getInstance().hideKeyboard(this);
-                setDeleteMode(false);
+                manager.selectAllNotes(false);
+                itemsAdapter.displayCheckBoxes(false);
                 manager.add(new note(itemText, "tap here to add a description"));
+                itemsAdapter.notifyDataSetChanged();
                 act_main_et_new_item.setText("");
                 hideOrShowNoNotesMessage();
             } else {
@@ -159,24 +163,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setDeleteMode(boolean state) {
-        if (state == true) {
-            deleteButton.setVisible(true);
-            wakeUpToolBar(act_main_toolbar);
-            itemsAdapter.displayAllCheckBoxes(true);
-        } else if (state == false) {
-            deleteButton.setVisible(false);
-            itemsAdapter.uncheckAll();
-            itemsAdapter.displayAllCheckBoxes(false);
-        }
-    }
-
     private boolean isListInDeleteMode() {
         if (deleteButton.isVisible()) {
             return true;
         } else {
             return false;
         }
+    }
+
+    private void setDeleteMode(int selectedItem, boolean state) {
+        Log.d(TAG, "setDeleteMode:\nValue of 'selectedItem' parameter:\t\t" + selectedItem);
+        manager.selectAllNotes(!state);
+        itemsAdapter.displayCheckBoxes(state);
+        manager.selectNote(selectedItem, state);
+        deleteButton.setVisible(state);
     }
 
     private void setupListView(Bundle savedInstanceState) {
@@ -200,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setupListViewListener();
-        itemsAdapter.setListViewReferenceHandle(act_main_lv_Items);
         addInitialTestNotes();
         hideOrShowNoNotesMessage();
     }
@@ -212,9 +211,7 @@ public class MainActivity extends AppCompatActivity {
                 new AdapterView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> adapter, View item, int pos, long id) {
-                        boolean state = isListInDeleteMode();
-                        setDeleteMode(!state);
-                        itemsAdapter.setCheckBoxSelected(pos, true);
+                        setDeleteMode(pos, !isListInDeleteMode());
                         return true;
                     }
                 });
@@ -225,7 +222,9 @@ public class MainActivity extends AppCompatActivity {
             loader.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {
-                    setDeleteMode(false);
+                    manager.selectAllNotes(false);
+                    itemsAdapter.displayCheckBoxes(false);
+                    // TODO: 8/10/2016 change loadnotes to a boolean return so we know if the data changed
                     manager.loadNotes();
                     itemsAdapter.notifyDataSetChanged();
                     mainHandler.postDelayed(new Runnable() {
@@ -243,8 +242,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (isListInDeleteMode() == true) {
-                    Log.d(TAG, "onItemClick: isListInDeleteMode == true");
-                    //itemsAdapter.setCheckBoxSelected(position);
+                    manager.selectNote(position, !manager.getNote(position).isSelected());
                 } else {
                     //inflate the selected item's edit layout/start activity
                 }
@@ -333,16 +331,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void onSelectNote(View v) {
-        CheckBox check = (CheckBox) v;
-        View parent = (View) check.getParent();
-        if (check.isChecked()) {
-            parent.setSelected(true);
-        } else if (!check.isChecked()) {
-            parent.setSelected(false);
-        }
-    }
-
     private void addInitialTestNotes() {
         //add a few notes to the application until read() and write() are working
         if (manager.getNotesList().isEmpty()) {
@@ -362,121 +350,56 @@ public class MainActivity extends AppCompatActivity {
 
     //private extension of arrayadapter to easily update the listview
     private class CustomListViewAdapter extends ArrayAdapter {
-        private final ArrayList<note> notes;
         private final Activity activity;
         private ListView theListView;
-        private NotesHolder holder;
         private Context context;
         private Toolbar t;
-        private final int CHECKED = 1;
-        private final int UNCHECKED = 0;
-        private ArrayList<Integer> selectedRows;
+        private boolean checkboxVisible;
+        private NoteHolder holder;
 
         public CustomListViewAdapter(Context context, int resource, ArrayList<note> notes, Activity activity) {
-            super(context, resource, notes);
+            super(context, resource, manager.getNotesList());
             this.activity = activity;
-            this.notes = notes;
             this.context = context;
-            selectedRows = new ArrayList<>();
+            checkboxVisible = false;
         }
 
-        public void setCheckBoxSelected(int pos, boolean b) {
-            CheckBox c = (CheckBox) theListView.getChildAt(pos).findViewById(R.id.selector);
-            if (b) {
-                c.setChecked(true);
-            } else if (b == false){
-                c.setChecked(false);
-            }
-        }
-
-        public void uncheckAll() {
-            if (notes.size() > 0) {
-                int i = 0;
-                for (note n : notes) {
-                    CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
-                    c.setChecked(false);
-                    Log.d(TAG, "uncheckAll:");
-                    Log.d(TAG, "Line #" + i + "\t-->\tisChecked() == " + c.isChecked());
-                    i++;
-                }
-            }
-        }
-
-        public void displayAllCheckBoxes(boolean state) {
-            if (notes.size() > 0) {
-                int i = 0;
-                for (note n : notes) {
-                    CheckBox c = (CheckBox) theListView.getChildAt(i).findViewById(R.id.selector);
-                    if (state == true) {
-                        c.setVisibility(View.VISIBLE);
-                    } else {
-                        c.setVisibility(View.GONE);
-                    }
-                    i++;
-                }
-            }
+        public void displayCheckBoxes(boolean state){
+            checkboxVisible = state;
             this.notifyDataSetChanged();
         }
 
         @Override
+        public void notifyDataSetChanged(){
+            super.notifyDataSetChanged();
+            manager.notifyAllObservers();
+        }
+
+        @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            Log.d(TAG, "getView: called!");
             holder = null;
             if (convertView == null) {
-                convertView = new customListViewItem(theListView.getContext());
-/*                holder = new NotesHolder();
-                holder.Title = (TextView) convertView.findViewById(R.id.textView_note_title);
-                holder.Description = (TextView) convertView.findViewById(R.id.note_description);
-                holder.checkBox = (CheckBox) convertView.findViewById(R.id.selector);
-                holder.Date = (TextView) convertView.findViewById(R.id.date);*/
+                holder = new NoteHolder();
+                convertView = new customListViewItem(context);
                 manager.registerView((NotesListObserver) convertView, position);
-                //get index of the new object and set the text
-            } else {
-            holder = (NotesHolder) convertView.getTag();
-/*                    holder.Title.setText(notes.get(position).getTitle());
-                holder.Description.setText(notes.get(position).getDescription());
-                holder.Date.setText(notes.get(position).getDate().toString());*/
+            } else if (convertView instanceof NotesListObserver) {
+                ((NotesListObserver) convertView).update(manager.getNote(position));
+            }
 
-                if (manager.noteSelected(position)) {
-                    manager.selectNote(position, true);
-                } else if(!manager.noteSelected(position)) {
-                    manager.selectNote(position, false);
+            if (convertView instanceof customListViewItem) {
+                if (checkboxVisible) {
+                    ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.VISIBLE);
+                } else {
+                    ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.GONE);
                 }
             }
 
-
-
+            convertView.setTag(holder);
             return convertView;
         }
-
-/*        private void addSelectedItem(int position) {
-            if (!selectedRows.contains(position)){
-                //Log.d(TAG, "addSelectedItem: Pos=" + position);
-                selectedRows.add(Integer.valueOf(position));
-            }
-        }
-
-        private void removeSelectedItem(int position) {
-            if(selectedRows.contains(position)){
-                //Log.d(TAG, "removeSelectedItem: Pos=" + position);
-                selectedRows.remove(Integer.valueOf(position));
-            }
-        }*/
-
-        public void setListViewReferenceHandle(ListView act_main_lv_Items) {
-            this.theListView = act_main_lv_Items;
-        }
-
     }
 
-/*    private static class NotesHolder {
-        private static final int CHECKED = 1;
-        private static final int UNCHECKED = 0;
-
-        TextView Title;
-        TextView Description;
-        CheckBox checkBox;
-        TextView Date;
-        int status;
-    }*/
+    public static class NoteHolder {
+        int index;
+    }
 }

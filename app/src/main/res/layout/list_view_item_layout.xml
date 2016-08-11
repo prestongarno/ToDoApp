@@ -75,7 +75,6 @@
             android:padding="5dp"
             android:scaleX="1.5"
             android:scaleY="1.5"
-            android:onClick="onSelectNote"
             android:tag="toSelectNote"
             android:visibility="gone"
             android:checked="false"

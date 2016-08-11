@@ -59,7 +59,7 @@ public class notesManager {
         notesList.remove(pos);
     }
 
-    private note getNote(int pos) {
+    public note getNote(int pos) {
         return notesList.get(pos);
     }
 
@@ -164,6 +164,8 @@ public class notesManager {
 
     public void registerView(NotesListObserver Observer, int position) {
         notesList.get(position).registerListener(Observer);
+        Observer.update(notesList.get(position));
+        // TODO: 8/10/2016 maybe notify the datasetChanged here?
         //observersList.add(Observer);
     }
 
@@ -181,9 +183,16 @@ public class notesManager {
     }
 
     public void deleteSelected() {
-        for (int i = notesList.size() - 1; i > -1; i--) {
-            if (notesList.get(i).isSelected()) {
-                notesList.remove(i);
+        int index = 0;
+        // TODO: 8/10/2016 Delete from the back forwards 
+        for(note n : notesList) {
+            ArrayList<NotesListObserver> os = n.getListeners();
+            for(NotesListObserver o : os) {
+                if (o instanceof customListViewItem) {
+                    if(((customListViewItem) o).getNoteCheckBox().isChecked()){
+                        notesList.remove(index);
+                    }
+                }
             }
         }
     }
@@ -191,6 +200,14 @@ public class notesManager {
     public void selectNote(int index, boolean state){
         if (state) {
             notesList.get(index).setSelected(state);
+        } else if (!state) {
+            notesList.get(index).setSelected(!state);
+        }
+    }
+
+    public void selectAllNotes(boolean checked){
+        for (note n : notesList) {
+            n.setSelected(checked);
         }
     }
 

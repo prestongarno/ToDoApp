@@ -11,6 +11,8 @@ import android.widget.TextView;
  */
 public class customListViewItem extends RelativeLayout implements NotesListObserver {
 
+    // TODO: 8/10/2016 Possible need to get parent view and call notifyDataSetChanged() in order to display changes
+
     private Context c;
     private TextView Title, Description, Date;
     private CheckBox checkBox;
@@ -24,6 +26,7 @@ public class customListViewItem extends RelativeLayout implements NotesListObser
     public customListViewItem(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.c = context;
+        init();
     }
 
     public customListViewItem(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -43,19 +46,25 @@ public class customListViewItem extends RelativeLayout implements NotesListObser
         checkBox = (CheckBox) findViewById(R.id.selector);
     }
 
+    public void setCheckBoxTag(int currentPosition) {
+        checkBox.setTag(currentPosition);
+    }
+
+/*    @Override
+    public void setTag(Object o) {
+        if (o instanceof MainActivity.NoteHolder) {
+            checkBox.setTag(o);
+        }
+    }*/
+
+    public CheckBox getNoteCheckBox(){return this.checkBox;}
+
     @Override
     public void update(note n) {
         this.Title.setText(n.getTitle());
         this.Description.setText(n.getDescription());
         this.Date.setText(n.getDate().toString());
-    }
-
-    /**
-     * The real reason why I rewrote the entire app unfortunately :(
-     * @return checkbox state
-     */
-    public boolean isCheckBoxSelected() {
-        return checkBox.isSelected();
+        this.checkBox.setChecked(n.isSelected());
     }
 
 }
