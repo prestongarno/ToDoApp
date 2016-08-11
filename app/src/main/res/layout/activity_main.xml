@@ -36,7 +36,8 @@
             android:layout_below="@+id/act_main_toolbar"
             android:animateLayoutChanges="true"
             android:background="@color/colorPrimaryDark"
-            android:visibility="invisible" />
+            android:visibility="invisible"
+            android:descendantFocusability="blocksDescendants"/>
 
     </android.support.v4.widget.SwipeRefreshLayout>
 

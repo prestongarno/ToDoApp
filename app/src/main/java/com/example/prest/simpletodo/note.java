@@ -3,38 +3,59 @@ package com.example.prest.simpletodo;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 
 /**
  * Created by prest on 8/1/2016.
  */
-public class note implements Parcelable {
+public class note implements Parcelable, NotesUInotifier {
 
     private String title, description;
     private simpleDateString date;
+    private boolean isSelected;
+    private ArrayList<NotesListObserver> observersList;
 
     public note(String title) {
+        observersList = new ArrayList<>();
+        isSelected = false;
+        Calendar c = Calendar.getInstance();
         this.title = title;
         this.description = "";
-        this.date = new simpleDateString(Integer.toString(Calendar.DAY_OF_WEEK), Integer.toString(Calendar.MONTH), Integer.toString(Calendar.YEAR));
+        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DAY_OF_WEEK)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
     }
 
     public note(String title, String description) {
+        observersList = new ArrayList<>();
+        isSelected = false;
+        Calendar c = Calendar.getInstance();
         this.title = title;
         this.description = description;
-        this.date = new simpleDateString(Integer.toString(Calendar.DAY_OF_WEEK), Integer.toString(Calendar.MONTH), Integer.toString(Calendar.YEAR));
+        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DAY_OF_WEEK)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
     }
 
     public note(String title, String description, simpleDateString date) {
+        observersList = new ArrayList<>();
+        isSelected = false;
         this.title = title;
         this.description = description;
         this.date = date;
     }
 
     protected note(Parcel in) {
+        observersList = new ArrayList<>();
         title = in.readString();
         description = in.readString();
         date = new simpleDateString(in.readString());
+    }
+
+    public note(String title, String description, simpleDateString date, NotesListObserver o) {
+        observersList = new ArrayList<>();
+        observersList.add(o);
+        isSelected = false;
+        this.title = title;
+        this.description = description;
+        this.date = date;
     }
 
     public String getTitle() {
@@ -43,6 +64,7 @@ public class note implements Parcelable {
 
     public void setTitle(String title) {
         this.title = title;
+        notifyObservers();
     }
 
     public String getDescription() {
@@ -51,14 +73,16 @@ public class note implements Parcelable {
 
     public void setDescription(String description) {
         this.description = description;
+        notifyObservers();
     }
 
-    public String getDate() {
-        return date.toString();
+    public simpleDateString getDate() {
+        return date;
     }
 
     public void setDate(simpleDateString date) {
         this.date = date;
+        notifyObservers();
     }
 
     @Override
@@ -90,5 +114,33 @@ public class note implements Parcelable {
         }
     };
 
+    public void setSelected(boolean isSelected) {
+        this.isSelected = isSelected;
+        notifyObservers();
+    }
 
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public ArrayList<NotesListObserver> getListeners(){
+        return observersList;
+    }
+
+    @Override
+    public void registerListener(NotesListObserver Observer) {
+        observersList.add(Observer);
+    }
+
+    @Override
+    public void removeListener(NotesListObserver Observer, int position) {
+        observersList.remove(position);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for(NotesListObserver o : observersList) {
+            o.update(this);
+        }
+    }
 }

@@ -6,7 +6,7 @@
         android:id="@+id/main_menu_delete_note"
         app:showAsAction="always"
         android:visible="false"
-        android:icon="@mipmap/ic_action_action_delete">
+        android:icon="@mipmap/ic_launcher">
     </item>
     <item android:title="Sync notes"
         android:id="@+id/main_menu_sync_notes"
@@ -23,6 +23,10 @@
     <item android:title="Settings"
         app:showAsAction="never"
         android:id="@+id/main_menu_settings"/>
+    <item android:title="DebugAction"
+        app:showAsAction="never"
+        android:id="@+id/main_menu_debug_action">
+    </item>
     <item
         android:id="@+id/main_menu_action_search"
         android:orderInCategory="200"

@@ -7,7 +7,8 @@
     android:id="@+id/list_view_item_layout"
     android:background="@drawable/drawable_additem"
     android:orientation="horizontal"
-    android:gravity="fill_horizontal|top">
+    android:gravity="fill_horizontal|top"
+    android:descendantFocusability="blocksDescendants">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -77,6 +78,7 @@
             android:onClick="onSelectNote"
             android:tag="toSelectNote"
             android:visibility="gone"
+            android:checked="false"
             />
     </LinearLayout>
 </RelativeLayout>
