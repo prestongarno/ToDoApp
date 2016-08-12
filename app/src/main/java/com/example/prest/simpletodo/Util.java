@@ -89,8 +89,5 @@ public class Util {
     public void printStackTrace(Exception e, String TAG){
         StackTraceElement[] ee = e.getStackTrace();
         Log.d(TAG, "EXCEPTION: " + e.getMessage() + "\n");
-        for(StackTraceElement eee : ee) {
-            Log.d(TAG, "\t" + eee.toString());
-        }
     }
 }

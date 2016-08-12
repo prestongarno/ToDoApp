@@ -2,8 +2,8 @@ package com.example.prest.simpletodo;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 
 /**
@@ -14,10 +14,9 @@ public class note implements Parcelable, NotesUInotifier {
     private String title, description;
     private simpleDateString date;
     private boolean isSelected;
-    private ArrayList<NotesListObserver> observersList;
+    private NotesListObserver viewObserver;
 
     public note(String title) {
-        observersList = new ArrayList<>();
         isSelected = false;
         Calendar c = Calendar.getInstance();
         this.title = title;
@@ -26,7 +25,6 @@ public class note implements Parcelable, NotesUInotifier {
     }
 
     public note(String title, String description) {
-        observersList = new ArrayList<>();
         isSelected = false;
         Calendar c = Calendar.getInstance();
         this.title = title;
@@ -35,7 +33,6 @@ public class note implements Parcelable, NotesUInotifier {
     }
 
     public note(String title, String description, simpleDateString date) {
-        observersList = new ArrayList<>();
         isSelected = false;
         this.title = title;
         this.description = description;
@@ -43,15 +40,13 @@ public class note implements Parcelable, NotesUInotifier {
     }
 
     protected note(Parcel in) {
-        observersList = new ArrayList<>();
         title = in.readString();
         description = in.readString();
         date = new simpleDateString(in.readString());
     }
 
     public note(String title, String description, simpleDateString date, NotesListObserver o) {
-        observersList = new ArrayList<>();
-        observersList.add(o);
+        viewObserver = o;
         isSelected = false;
         this.title = title;
         this.description = description;
@@ -123,24 +118,26 @@ public class note implements Parcelable, NotesUInotifier {
         return isSelected;
     }
 
-    public ArrayList<NotesListObserver> getListeners(){
-        return observersList;
+    public NotesListObserver getListeners(){
+        return viewObserver;
     }
 
     @Override
     public void registerListener(NotesListObserver Observer) {
-        observersList.add(Observer);
+        viewObserver = Observer;
     }
 
     @Override
     public void removeListener(NotesListObserver Observer, int position) {
-        observersList.remove(position);
+        viewObserver = null;
     }
 
     @Override
     public void notifyObservers() {
-        for(NotesListObserver o : observersList) {
-            o.update(this);
+        if (viewObserver != null) {
+            viewObserver.update(this);
+        } else {
+            Log.d("NoteClass", "notifyObservers: Null observer for this note: " + this.getTitle());
         }
     }
 }

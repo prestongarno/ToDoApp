@@ -22,12 +22,8 @@ public class notesManager {
     private Activity handlingActivity;
     private Context handlingContext;
 
-    //Listeners / observers
-    ArrayList<NotesListObserver> observersList;
-
     public notesManager(Context c, Activity a) {
         notesList = new ArrayList<>();
-        observersList = new ArrayList<>();
         this.handlingActivity = a;
         this.handlingContext = c;
     }
@@ -92,7 +88,11 @@ public class notesManager {
                 read = itemsFromFIle.get(i).split("&-#-#-#-&");
                 notesList.add(new note(read[0], read[1], new simpleDateString(read[2])));
             }
-            Toast.makeText(handlingActivity.getApplicationContext(), notesList.size() - OldNoteCount + " new notes!", Toast.LENGTH_SHORT).show();
+            if (OldNoteCount != notesList.size()) {
+                Toast.makeText(handlingActivity.getApplicationContext(), notesList.size() - OldNoteCount + " new notes!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(handlingActivity.getApplicationContext(), "No new notes", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             notesList = tempArrayList;
             Toast.makeText(handlingActivity.getApplicationContext(), "Error loading notes!", Toast.LENGTH_SHORT).show();
@@ -165,33 +165,24 @@ public class notesManager {
     public void registerView(NotesListObserver Observer, int position) {
         notesList.get(position).registerListener(Observer);
         Observer.update(notesList.get(position));
-        // TODO: 8/10/2016 maybe notify the datasetChanged here?
-        //observersList.add(Observer);
-    }
-
-    public void removeView(NotesListObserver Observer, int position) {
-        observersList.remove(position);
     }
 
     public void notifyAllObservers() {
-        for (note n : notesList) {
-            ArrayList<NotesListObserver> list = n.getListeners();
-            for(NotesListObserver o : list) {
-                o.update(n);
+        if (notesList.size() > 0){
+            for (note n : notesList) {
+                if (n.getListeners()!=null){
+                    n.getListeners().update(n);
+                }
             }
         }
     }
 
     public void deleteSelected() {
-        int index = 0;
-        // TODO: 8/10/2016 Delete from the back forwards 
-        for(note n : notesList) {
-            ArrayList<NotesListObserver> os = n.getListeners();
-            for(NotesListObserver o : os) {
-                if (o instanceof customListViewItem) {
-                    if(((customListViewItem) o).getNoteCheckBox().isChecked()){
-                        notesList.remove(index);
-                    }
+        for(int index = notesList.size()-1; index > -1; index--) {
+            NotesListObserver osr = notesList.get(index).getListeners();
+            if (osr instanceof customListViewItem) {
+                if(((customListViewItem) osr).getNoteCheckBox().isChecked()){
+                    notesList.remove(index);
                 }
             }
         }
