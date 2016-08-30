@@ -5,4 +5,5 @@
 
     <dimen name="regular_display_text_size">15sp</dimen>
     <dimen name="small_text_size">11sp</dimen>
+    <dimen name="title_text_size">22sp</dimen>
 </resources>

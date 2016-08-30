@@ -191,8 +191,10 @@ public class notesManager {
     public void selectNote(int index, boolean state){
         if (state) {
             notesList.get(index).setSelected(state);
+            notifyAllObservers();
         } else if (!state) {
             notesList.get(index).setSelected(!state);
+            notifyAllObservers();
         }
     }
 

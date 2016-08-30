@@ -37,6 +37,8 @@
             android:animateLayoutChanges="true"
             android:background="@color/colorPrimaryDark"
             android:visibility="invisible"
+            android:clickable="true"
+            android:focusable="true"
             android:descendantFocusability="blocksDescendants"/>
 
     </android.support.v4.widget.SwipeRefreshLayout>

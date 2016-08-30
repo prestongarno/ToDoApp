@@ -2,6 +2,7 @@ package com.example.prest.simpletodo;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem deleteButton;
     public final static String TAG = "MainActivity";
     private final static float OPAQUE = 0.3f;
+    private final int REQUEST_CODE_EDIT_NOTE = 35;
 
 
     @Override
@@ -171,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
         itemsAdapter.displayCheckBoxes(state);
         manager.selectNote(selectedItem, state);
         deleteButton.setVisible(state);
+        act_main_lv_Items.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     }
 
     private void setupListView(Bundle savedInstanceState) {
@@ -205,6 +208,24 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupListViewListener() {
 
+        //onClickListener
+        act_main_lv_Items.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //inflate the selected item's edit layout/start activity
+                if (isListInDeleteMode()) {
+                    manager.selectNote(position, !manager.getNote(position).isSelected());
+                } else {
+                    //inflate the selected item's edit layout/start activity
+                    Intent i = new Intent(MainActivity.this, EditNoteActivity.class);
+                    i.putExtra("NOTE_TITLE", manager.getNoteTitle(position));
+                    i.putExtra("NOTE_DESCRIPTION", manager.getNoteDescription(position));
+                    i.putExtra("NOTE_INDEX", position);
+                    startActivityForResult(i, REQUEST_CODE_EDIT_NOTE);
+                }
+            }
+        });
+
         //LongClick Listener
         act_main_lv_Items.setOnItemLongClickListener(
                 new AdapterView.OnItemLongClickListener() {
@@ -235,18 +256,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-
-        //onClickListener
-        act_main_lv_Items.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (isListInDeleteMode()) {
-                    manager.selectNote(position, !manager.getNote(position).isSelected());
-                } else {
-                    //inflate the selected item's edit layout/start activity
-                }
-            }
-        });
     }
 
     @Override
@@ -351,6 +360,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int reqCode, int resultCode, Intent data) {
+        if(reqCode == REQUEST_CODE_EDIT_NOTE) {
+            if (data != null) {
+                String title, description;
+                int index;
+
+                title = data.getStringExtra("NOTE_TITLE");
+                description = data.getStringExtra("NOTE_DESCRIPTION");
+                index = data.getIntExtra("NOTE_INDEX", -1);
+
+                manager.setNoteTitle(index, title);
+                manager.setNoteDescription(index, description);
+                manager.notifyAllObservers();
+                Log.d(TAG, "onActivityResult: CALLED");
+            }
+        }
+        Util.getInstance().hideKeyboard(this);
+    }
+
     //private extension of arrayadapter to easily update the listview
     private class CustomListViewAdapter extends ArrayAdapter {
         private final Activity activity;
@@ -365,15 +394,15 @@ public class MainActivity extends AppCompatActivity {
             checkboxVisible = false;
         }
 
-        public void displayCheckBoxes(boolean state){
+        public void displayCheckBoxes(boolean state) {
             checkboxVisible = state;
             this.notifyDataSetChanged();
         }
 
         @Override
-        public void notifyDataSetChanged(){
+        public void notifyDataSetChanged() {
             super.notifyDataSetChanged();
-            if (manager!= null) {
+            if (manager != null) {
                 manager.notifyAllObservers();
             }
         }
@@ -389,26 +418,19 @@ public class MainActivity extends AppCompatActivity {
                 manager.registerView((NotesListObserver) convertView, position);
                 ((NotesListObserver) convertView).update(manager.getNote(position));
             }
-
-            if (convertView instanceof customListViewItem) {
-                if (checkboxVisible) {
-                    ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.VISIBLE);
-                } else {
-                    ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.GONE);
-                }
+            //
+            if (checkboxVisible) {
+                ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.VISIBLE);
+            } else {
+                ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.GONE);
             }
 
-            //convertView.setTag(holder);
             return convertView;
         }
-
+        //convertView.setTag(holder);
         @Override
-        public int getCount(){
+        public int getCount() {
             return manager.getSize();
         }
     }
-
-/*    public static class NoteHolder {
-        int index;
-    }*/
 }

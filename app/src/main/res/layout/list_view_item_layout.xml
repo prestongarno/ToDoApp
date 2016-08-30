@@ -2,13 +2,15 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
-    android:longClickable="true"
+    android:clickable="false"
+    android:longClickable="false"
     android:id="@+id/list_view_item_layout"
     android:background="@drawable/drawable_additem"
     android:orientation="horizontal"
     android:gravity="fill_horizontal|top"
-    android:descendantFocusability="blocksDescendants">
+    android:descendantFocusability="blocksDescendants"
+    android:focusable="false"
+    android:focusableInTouchMode="false">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -20,7 +22,10 @@
         android:layout_alignParentBottom="false"
         android:id="@+id/left_side"
         android:layout_toLeftOf="@+id/right_side"
-        android:layout_alignParentRight="false">
+        android:layout_alignParentRight="false"
+        android:clickable="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,7 +37,9 @@
             android:scrollHorizontally="true"
             android:maxLines="2"
             android:ellipsize="end"
-            />
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
 
         <TextView
             android:id="@+id/note_description"
@@ -44,7 +51,9 @@
             android:scrollHorizontally="true"
             android:singleLine="true"
             android:ellipsize="end"
-            />
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
 
     </LinearLayout>
 
@@ -57,7 +66,10 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:gravity="center_vertical"
-        android:layout_alignBottom="@+id/left_side">
+        android:layout_alignBottom="@+id/left_side"
+        android:clickable="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
 
         <TextView
             android:layout_width="wrap_content"
@@ -66,7 +78,10 @@
             android:padding="10dp"
             android:gravity="center"
             android:id="@+id/date"
-            android:textColor="@color/textColor" />
+            android:textColor="@color/textColor"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
 
         <CheckBox
             android:id="@+id/selector"
@@ -78,6 +93,8 @@
             android:tag="toSelectNote"
             android:visibility="gone"
             android:checked="false"
-            />
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
     </LinearLayout>
 </RelativeLayout>
