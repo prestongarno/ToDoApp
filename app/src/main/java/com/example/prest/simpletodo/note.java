@@ -4,17 +4,23 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.parse.ParseClassName;
+import com.parse.ParseObject;
+
 import java.util.Calendar;
 
 /**
  * Created by prest on 8/1/2016.
  */
-public class note implements Parcelable, NotesUInotifier {
+@ParseClassName("note")
+public class note extends ParseObject implements Parcelable, NotesUInotifier {
 
     private String title, description;
     private simpleDateString date;
     private boolean isSelected;
     private NotesListObserver viewObserver;
+
+    public note(){}
 
     public note(String title) {
         isSelected = false;
@@ -22,6 +28,9 @@ public class note implements Parcelable, NotesUInotifier {
         this.title = title;
         this.description = "";
         this.date = new simpleDateString(Integer.toString(c.get(Calendar.DAY_OF_WEEK)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
+        put("title", title);
+        put("description", "no description");
+        put("dateCreated", this.date.toString());
     }
 
     public note(String title, String description) {
@@ -29,7 +38,10 @@ public class note implements Parcelable, NotesUInotifier {
         Calendar c = Calendar.getInstance();
         this.title = title;
         this.description = description;
-        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DAY_OF_WEEK)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
+        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DATE)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
+        put("title", title);
+        put("description", description);
+        put("dateCreated", this.date.toString());
     }
 
     public note(String title, String description, simpleDateString date) {
@@ -37,6 +49,10 @@ public class note implements Parcelable, NotesUInotifier {
         this.title = title;
         this.description = description;
         this.date = date;
+
+        put("title", this.title);
+        put("description", this.description);
+        put("dateCreated", this.date.toString());
     }
 
     protected note(Parcel in) {
@@ -51,32 +67,45 @@ public class note implements Parcelable, NotesUInotifier {
         this.title = title;
         this.description = description;
         this.date = date;
+
+        put("title", title);
+        put("description", description);
+        put("dateCreated", date.toString());
+    }
+
+    public void setAll(String title, String description, simpleDateString dateCreated) {
+        setTitle(title);
+        setDescription(description);
+        setDate(dateCreated);
     }
 
     public String getTitle() {
-        return title;
+        return (String) get("title");
     }
 
     public void setTitle(String title) {
         this.title = title;
+        put("title", title);
         notifyObservers();
     }
 
     public String getDescription() {
-        return description;
+        return (String) get("description");
     }
 
     public void setDescription(String description) {
         this.description = description;
+        put("description", description);
         notifyObservers();
     }
 
     public simpleDateString getDate() {
-        return date;
+        return new simpleDateString((String) get("dateCreated"));
     }
 
     public void setDate(simpleDateString date) {
         this.date = date;
+        put("dateCreated", date.toString());
         notifyObservers();
     }
 
@@ -87,9 +116,9 @@ public class note implements Parcelable, NotesUInotifier {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(title);
-        dest.writeString(description);
-        dest.writeString(date.toString());
+        dest.writeString(getTitle());
+        dest.writeString(getDescription());
+        dest.writeString(getDate().toString());
     }
 
     @Override
@@ -139,5 +168,12 @@ public class note implements Parcelable, NotesUInotifier {
         } else {
             Log.d("NoteClass", "notifyObservers: Null observer for this note: " + this.getTitle());
         }
+    }
+
+    public void updateParse(){
+        put("title", title);
+        put("description", description);
+        put("dateCreated", getDate().toString());
+        this.saveInBackground();
     }
 }

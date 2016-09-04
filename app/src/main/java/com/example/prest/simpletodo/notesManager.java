@@ -4,6 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseQuery;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -66,37 +70,25 @@ public class notesManager {
         try {
             FileUtils.writeLines(todoFile, notesList);
             for (note n : notesList) {
+                n.updateParse();
             }
         } catch (IOException e) {
             Toast.makeText(handlingActivity.getApplicationContext(), "Error writing notes!", Toast.LENGTH_SHORT).show();
         }
     }
 
-    public void loadNotes() {
-        File filesDir = handlingActivity.getFilesDir();
-        File toDoFile = new File(filesDir, "todo.txt");
-        ArrayList<note> tempArrayList = notesList;
-
-        try {
-            int OldNoteCount = notesList.size();
-            notesList.clear();
-
-            List<String> itemsFromFIle = FileUtils.readLines(toDoFile);
-
-            String[] read;
-            for (int i = 0; i < itemsFromFIle.size(); i++) {
-                read = itemsFromFIle.get(i).split("&-#-#-#-&");
-                notesList.add(new note(read[0], read[1], new simpleDateString(read[2])));
+    public void updateData(){
+        ParseQuery<note> query = ParseQuery.getQuery(note.class);
+        query.findInBackground(new FindCallback<note>() {
+            @Override
+            public void done(List<note> notes, ParseException error) {
+                if(notes != null){
+                    notesList.clear();
+                    notesList.addAll(notes);
+                }
             }
-            if (OldNoteCount != notesList.size()) {
-                Toast.makeText(handlingActivity.getApplicationContext(), notesList.size() - OldNoteCount + " new notes!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(handlingActivity.getApplicationContext(), "No new notes", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            notesList = tempArrayList;
-            Toast.makeText(handlingActivity.getApplicationContext(), "Error loading notes!", Toast.LENGTH_SHORT).show();
-        }
+        });
+        this.notifyAllObservers();
     }
 
     /**
@@ -182,6 +174,11 @@ public class notesManager {
             NotesListObserver osr = notesList.get(index).getListeners();
             if (osr instanceof customListViewItem) {
                 if(((customListViewItem) osr).getNoteCheckBox().isChecked()){
+                    try{
+                        notesList.get(index).delete();
+                    } catch (Exception ex) {
+                        Toast.makeText(this.handlingContext, "Error deleting notes!", Toast.LENGTH_SHORT).show();
+                    }
                     notesList.remove(index);
                 }
             }
@@ -193,7 +190,7 @@ public class notesManager {
             notesList.get(index).setSelected(state);
             notifyAllObservers();
         } else if (!state) {
-            notesList.get(index).setSelected(!state);
+            notesList.get(index).setSelected(state);
             notifyAllObservers();
         }
     }

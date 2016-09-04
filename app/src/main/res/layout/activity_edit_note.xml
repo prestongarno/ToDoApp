@@ -41,7 +41,7 @@
             android:paddingTop="5dp"
             android:gravity="left"
             android:id="@+id/edit_note_title_bar"
-            android:background="@color/colorPrimaryDark"
+            android:background="@drawable/save_note_selector"
             android:singleLine="true"
             android:ellipsize="end"
             android:longClickable="true"
