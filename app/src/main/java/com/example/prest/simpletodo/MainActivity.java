@@ -1,7 +1,5 @@
 package com.example.prest.simpletodo;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,7 +14,6 @@ import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -55,16 +52,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         //Initialize Parse
-        //Parse.initialize(new Parse.Configuration.Builder(this).applicationId("253uxoJvouZhIYDeUaa5LRnJSbILCJGejWXKrT9B").clientKey("9CujVxzGDAHapdvioaB2A1pQr1iH3rIU0MRqqvSi").build());
         if (savedInstanceState == null) {
             try{
                 ParseObject.registerSubclass(note.class);
                 Parse.initialize(this, "253uxoJvouZhIYDeUaa5LRnJSbILCJGejWXKrT9B", "9CujVxzGDAHapdvioaB2A1pQr1iH3rIU0MRqqvSi");
                 ParseAnalytics.trackAppOpened(getIntent());
             }catch (RuntimeException r) {
-                Log.d(TAG, "onCreate: runtime error");
             }
-            
         }
         manager = new notesManager(getApplicationContext(), this);
 
@@ -83,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
 
         //instantiate main handler
         setupListView(savedInstanceState);
-        Util.getInstance().hideKeyboard(this);
     }
 
     @Override
@@ -122,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 wakeUpToolBar(act_main_toolbar);
                 manager.selectAllNotes(false);
                 itemsAdapter.displayCheckBoxes(false);
-                manager.updateData();
+                manager.updateData(itemsAdapter, this);
                 itemsAdapter.notifyDataSetChanged();
                 return true;
             case R.id.main_menu_delete_note:
@@ -148,8 +141,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onPause() {
-
         super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     public void onAddItem(View v) {
@@ -187,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setDeleteMode(int selectedItem, boolean state) {
-        Log.d(TAG, "setDeleteMode:\nValue of 'selectedItem' parameter:\t\t" + selectedItem);
         manager.selectAllNotes(false);
         itemsAdapter.displayCheckBoxes(state);
         manager.selectNote(selectedItem, state);
@@ -202,38 +198,28 @@ public class MainActivity extends AppCompatActivity {
                 ArrayList<note> t = savedInstanceState.getParcelableArrayList("notes");
                 manager.setNotesList(t);
                 act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
-                itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this);
+                itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this, manager);
                 act_main_lv_Items.setAdapter(itemsAdapter);
                 itemsAdapter.notifyDataSetChanged();
-                if (manager.getCount() != 0) {
-                    noNotesMessage.setVisibility(View.INVISIBLE);
-                }
             } catch (Exception e) {
                 Util.getInstance().printStackTrace(e, TAG);
-                manager.updateData();
                 act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
-                itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this);
+                itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this, manager);
+                manager.updateData(itemsAdapter, this);
                 act_main_lv_Items.setAdapter(itemsAdapter);
-                if (manager.getCount() != 0) {
-                    noNotesMessage.setVisibility(View.INVISIBLE);
-                }
             }
+            noNotesMessage.setVisibility(View.INVISIBLE);
+            hideOrShowNoNotesMessage();
         } else {
-            manager.updateData();
             act_main_lv_Items = (ListView) findViewById(R.id.act_main_lv_Items);
-            itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this);
+            itemsAdapter = new CustomListViewAdapter(this, R.layout.list_view_item_layout, manager.getNotesList(), this, manager);
+            manager.updateData(itemsAdapter, this);
             act_main_lv_Items.setAdapter(itemsAdapter);
             itemsAdapter.notifyDataSetChanged();
-            if (manager.getCount() != 0) {
-                noNotesMessage.setVisibility(View.INVISIBLE);
-            }
+            manager.notifyAllObservers();
         }
 
         setupListViewListener();
-        addInitialTestNotes(false);
-        hideOrShowNoNotesMessage();
-        noNotesMessage.setVisibility(View.INVISIBLE);
-        act_main_lv_Items.setVisibility(View.VISIBLE);
         itemsAdapter.notifyDataSetChanged();
         manager.notifyAllObservers();
     }
@@ -271,7 +257,10 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         loader = (SwipeRefreshLayout) findViewById(R.id.act_main_swipe_refresh);
+
         if (loader != null) {
+            loader.setVisibility(View.VISIBLE);
+            loader.bringToFront();
             //implement action interface listener
             loader.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
@@ -279,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
                     manager.selectAllNotes(false);
                     itemsAdapter.displayCheckBoxes(false);
                     // TODO: 8/10/2016 change loadnotes to a boolean return so we know if the data changed
-                    manager.updateData();
+                    manager.updateData(itemsAdapter, MainActivity.this);
                     itemsAdapter.notifyDataSetChanged();
                     manager.notifyAllObservers();
                     mainHandler.postDelayed(new Runnable() {
@@ -295,7 +284,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onSaveInstanceState(Bundle savedState) {
-        //manager.saveNotes();
         savedState.putParcelableArrayList("notes", manager.getNotesList());
         super.onSaveInstanceState(savedState);
     }
@@ -333,18 +321,20 @@ public class MainActivity extends AppCompatActivity {
         mainLayout.addView(noNotesMessage, myParams);
     }
 
-    private void hideOrShowNoNotesMessage() {
+    public void hideOrShowNoNotesMessage() {
         AlphaAnimation fadeIn = (AlphaAnimation) AnimationUtils.loadAnimation(this, R.anim.fade_in);
         AlphaAnimation fadeOut = (AlphaAnimation) AnimationUtils.loadAnimation(this, R.anim.fade_out);
 
 
         //if items arraylist has items in it still
-        /**********************************************/
+        /********************************************/
         if (manager.getNotesList().isEmpty() == false) {
 
             if (act_main_lv_Items.isShown() == false) {
                 noNotesMessage.startAnimation(fadeOut);
                 act_main_lv_Items.startAnimation(fadeIn);
+                noNotesMessage.setVisibility(View.INVISIBLE);
+                act_main_lv_Items.setVisibility(View.VISIBLE);
                 noNotesMessage.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -353,16 +343,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }, 800);
             }
-            /**********************************************/
+            /********************************************/
 
 
             //else if items ArrayList is actually empty
-            /**********************************************/
+            /********************************************/
         } else if (manager.getNotesList().isEmpty() == true) {
 
             if (act_main_lv_Items.isShown() == true) {
                 noNotesMessage.startAnimation(fadeIn);
                 act_main_lv_Items.startAnimation(fadeOut);
+                noNotesMessage.setVisibility(View.VISIBLE);
+                act_main_lv_Items.setVisibility(View.INVISIBLE);
                 noNotesMessage.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -372,33 +364,6 @@ public class MainActivity extends AppCompatActivity {
                 }, 800);
             }
         }
-    }
-
-    private void addInitialTestNotes(boolean forcePost) {
-        //add a few notes to the application until read() and write() are working
-        /*if (manager.getNotesList().isEmpty()) {
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    ParseObject parseNote1 = new ParseObject("note");
-                    //parseNote1 = (note) parseNote1;
-                    ((note) parseNote1).setAll("This is the first test note!", "the description for the first note", new simpleDateString("04/24/1995"));
-                    manager.add((note) parseNote1);
-                    Log.d(TAG, "run: got here");
-
-                    *//*manager.add(new note("This is the first test note!", "the description for the first note", new simpleDateString("04/24/1995")));
-                    manager.add(new note("ToDo: Use Parse SDK for back end", "use local storage and cache also though!", new simpleDateString("10/16/2016")));
-                    manager.add(new note("ToDo: write menu item functionality", "separate methods for attaching the actionListeners though"));
-                    manager.add(new note("ToDo: learn how to efficiently use activities and fragments", "how do callback etc work between main and sub activities?"));*//*
-                    manager.saveNotes();
-                    itemsAdapter.notifyDataSetChanged();
-                }
-            }, 2000);
-        } else if (forcePost == true) {
-            manager.add(new note("Yet another test note!", "the description for the note", new simpleDateString("04/24/1995")));
-            manager.add(new note("ToDo: you must be using this button because something's not working", "debugging sucks!", new simpleDateString("10/16/2016")));
-            itemsAdapter.notifyDataSetChanged();
-        }*/
     }
 
     @Override
@@ -417,63 +382,8 @@ public class MainActivity extends AppCompatActivity {
                 manager.notifyAllObservers();
                 itemsAdapter.notifyDataSetChanged();
                 manager.getNote(index).updateParse();
-                Log.d(TAG, "onActivityResult: CALLED");
             }
         }
         Util.getInstance().hideKeyboard(this);
-    }
-
-    //private extension of arrayadapter to easily update the listview
-    private class CustomListViewAdapter extends ArrayAdapter {
-        private final Activity activity;
-        private Context context;
-        public boolean checkboxVisible;
-        //private NoteHolder holder;
-
-        public CustomListViewAdapter(Context context, int resource, ArrayList<note> notes, Activity activity) {
-            super(context, resource, manager.getNotesList());
-            this.activity = activity;
-            this.context = context;
-            checkboxVisible = false;
-        }
-
-        public void displayCheckBoxes(boolean state) {
-            checkboxVisible = state;
-            this.notifyDataSetChanged();
-        }
-
-        @Override
-        public void notifyDataSetChanged() {
-            super.notifyDataSetChanged();
-            if (manager != null) {
-                manager.notifyAllObservers();
-            }
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            //holder = null;
-            if (convertView == null) {
-                //holder = new NoteHolder();
-                convertView = new customListViewItem(context);
-                manager.registerView((NotesListObserver) convertView, position);
-            } else if (convertView instanceof NotesListObserver) {
-                manager.registerView((NotesListObserver) convertView, position);
-                ((NotesListObserver) convertView).update(manager.getNote(position));
-            }
-            //
-            if (checkboxVisible) {
-                ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.VISIBLE);
-            } else {
-                ((customListViewItem) convertView).getNoteCheckBox().setVisibility(View.GONE);
-            }
-
-            return convertView;
-        }
-        //convertView.setTag(holder);
-        @Override
-        public int getCount() {
-            return manager.getSize();
-        }
     }
 }

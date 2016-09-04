@@ -2,6 +2,7 @@ package com.example.prest.simpletodo;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
@@ -77,7 +78,7 @@ public class notesManager {
         }
     }
 
-    public void updateData(){
+    public void updateData(final CustomListViewAdapter itemsAdapter, final MainActivity m){
         ParseQuery<note> query = ParseQuery.getQuery(note.class);
         query.findInBackground(new FindCallback<note>() {
             @Override
@@ -85,6 +86,8 @@ public class notesManager {
                 if(notes != null){
                     notesList.clear();
                     notesList.addAll(notes);
+                    itemsAdapter.notifyDataSetChanged();
+                    m.hideOrShowNoNotesMessage();
                 }
             }
         });
