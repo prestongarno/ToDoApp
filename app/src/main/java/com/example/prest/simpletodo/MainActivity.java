@@ -1,12 +1,12 @@
 package com.example.prest.simpletodo;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,9 +20,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.parse.Parse;
-import com.parse.ParseAnalytics;
-import com.parse.ParseObject;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,39 +44,47 @@ public class MainActivity extends AppCompatActivity {
     public final static String TAG = "MainActivity";
     private final static float OPAQUE = 0.3f;
     private final int REQUEST_CODE_EDIT_NOTE = 35;
-
+    private final int REQUEST_CODE_LOGIN_CREDENTIALS = 99;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Intent intentLogin = new Intent(MainActivity.this, LoginActivity.class);
+
+        String result = getIntent().getStringExtra("LOGIN_RESULT");
 
         //Initialize Parse
-        if (savedInstanceState == null) {
-            try{
-                ParseObject.registerSubclass(note.class);
-                Parse.initialize(this, "253uxoJvouZhIYDeUaa5LRnJSbILCJGejWXKrT9B", "9CujVxzGDAHapdvioaB2A1pQr1iH3rIU0MRqqvSi");
-                ParseAnalytics.trackAppOpened(getIntent());
-            }catch (RuntimeException r) {
-            }
+        if (result == null) {
+            this.startActivity(intentLogin, null);
+            finish();
+        } else if (result.equals("ACCESS_GRANTED")) {
+            manager = new notesManager(getApplicationContext(), this);
+
+            //get the main layout, get handles for each of the items we need to access
+            mainLayout = (RelativeLayout) this.findViewById(R.id.activity_main);
+            noNotesMessage = new TextView(this);
+            noNotesMessage.setText("No Notes");
+            noNotesMessage.setTextColor(0xFFFFFF);
+            setBackgroundToNoNotes();
+
+            //setup the act_main_toolbar
+            act_main_toolbar = (Toolbar) findViewById(R.id.act_main_toolbar);
+            setupToolbar(act_main_toolbar);
+
+            mainHandler = new Handler();
+
+            //instantiate main handler
+            setupListView(savedInstanceState);
         }
-        manager = new notesManager(getApplicationContext(), this);
-
-        //get the main layout, get handles for each of the items we need to access
-        mainLayout = (RelativeLayout) this.findViewById(R.id.activity_main);
-        noNotesMessage = new TextView(this);
-        noNotesMessage.setText("No Notes");
-        noNotesMessage.setTextColor(0xFFFFFF);
-        setBackgroundToNoNotes();
-
-        //setup the act_main_toolbar
-        act_main_toolbar = (Toolbar) findViewById(R.id.act_main_toolbar);
-        setupToolbar(act_main_toolbar);
-
-        mainHandler = new Handler();
-
-        //instantiate main handler
-        setupListView(savedInstanceState);
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -134,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.main_menu_debug_action:
                 Calendar c = Calendar.getInstance();
-                Toast.makeText(this.getApplicationContext(), Integer.toString(c.get(Calendar.MONTH))+ Integer.toString(c.get(Calendar.DATE)) + Integer.toString(c.get(Calendar.YEAR)), Toast.LENGTH_LONG).show();
+                Toast.makeText(this.getApplicationContext(), Integer.toString(c.get(Calendar.MONTH)) + Integer.toString(c.get(Calendar.DATE)) + Integer.toString(c.get(Calendar.YEAR)), Toast.LENGTH_LONG).show();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -284,8 +292,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onSaveInstanceState(Bundle savedState) {
-        savedState.putParcelableArrayList("notes", manager.getNotesList());
-        super.onSaveInstanceState(savedState);
+        if (this.manager != null) {
+            savedState.putParcelableArrayList("notes", manager.getNotesList());
+            super.onSaveInstanceState(savedState);
+        }
     }
 
     private void setupToolbar(Toolbar t) {
@@ -368,22 +378,75 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int reqCode, int resultCode, Intent data) {
-        if(reqCode == REQUEST_CODE_EDIT_NOTE) {
-            if (data != null) {
-                String title, description;
-                int index;
+        switch (reqCode) {
+            case REQUEST_CODE_EDIT_NOTE:
+                if (data != null) {
+                    String title, description;
+                    int index;
 
-                title = data.getStringExtra("NOTE_TITLE");
-                description = data.getStringExtra("NOTE_DESCRIPTION");
-                index = data.getIntExtra("NOTE_INDEX", -1);
+                    title = data.getStringExtra("NOTE_TITLE");
+                    description = data.getStringExtra("NOTE_DESCRIPTION");
+                    index = data.getIntExtra("NOTE_INDEX", -1);
 
-                manager.setNoteTitle(index, title);
-                manager.setNoteDescription(index, description);
-                manager.notifyAllObservers();
-                itemsAdapter.notifyDataSetChanged();
-                manager.getNote(index).updateParse();
-            }
+                    manager.setNoteTitle(index, title);
+                    manager.setNoteDescription(index, description);
+                    manager.notifyAllObservers();
+                    itemsAdapter.notifyDataSetChanged();
+                    manager.getNote(index).updateParse();
+                }
+                break;
+            case REQUEST_CODE_LOGIN_CREDENTIALS:
+                Intent intentLogin = new Intent(MainActivity.this, LoginActivity.class);
+                if (resultCode == 0) {
+                    //fail login, start activity again
+                    startActivityForResult(intentLogin, REQUEST_CODE_LOGIN_CREDENTIALS);
+                } else if (resultCode == 1) {
+                    this.onCreate(new Bundle());
+                } else {
+                    startActivityForResult(intentLogin, REQUEST_CODE_LOGIN_CREDENTIALS);
+                }
+                break;
         }
         Util.getInstance().hideKeyboard(this);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.example.prest.simpletodo/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(client, viewAction);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.example.prest.simpletodo/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(client, viewAction);
+        client.disconnect();
     }
 }

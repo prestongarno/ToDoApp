@@ -27,7 +27,7 @@ public class note extends ParseObject implements Parcelable, NotesUInotifier {
         Calendar c = Calendar.getInstance();
         this.title = title;
         this.description = "";
-        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DAY_OF_WEEK)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
+        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DATE)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)).substring(2));
         put("title", title);
         put("description", "no description");
         put("dateCreated", this.date.toString());
@@ -38,7 +38,7 @@ public class note extends ParseObject implements Parcelable, NotesUInotifier {
         Calendar c = Calendar.getInstance();
         this.title = title;
         this.description = description;
-        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DATE)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)));
+        this.date = new simpleDateString(Integer.toString(c.get(Calendar.DATE)), Integer.toString(c.get(Calendar.MONTH)), Integer.toString(c.get(Calendar.YEAR)).substring(2));
         put("title", title);
         put("description", description);
         put("dateCreated", this.date.toString());

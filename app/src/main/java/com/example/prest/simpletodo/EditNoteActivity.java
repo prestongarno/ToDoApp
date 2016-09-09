@@ -41,12 +41,15 @@ public class EditNoteActivity extends AppCompatActivity {
         title.setText(NoteTitle);
         descriptionEditor.setText(NoteDescription);
         this.addActionListeners();
+        descriptionEditor.requestFocus();
+        descriptionEditor.setSelection(descriptionEditor.length());
+        Util.getInstance().showKeyboard(EditNoteActivity.this);
     }
 
     private void addActionListeners(){
-        title.setOnLongClickListener(new View.OnLongClickListener() {
+        title.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 backButton.setVisibility(View.INVISIBLE);
                 backButton.setEnabled(false);
                 saveTitleButton.setVisibility(View.VISIBLE);
@@ -57,7 +60,6 @@ public class EditNoteActivity extends AppCompatActivity {
                 titleEditor.requestFocus();
                 titleEditor.setSelection(0, titleEditor.length());
                 Util.getInstance().showKeyboard(EditNoteActivity.this);
-                return true;
             }
         });
     }
@@ -69,6 +71,7 @@ public class EditNoteActivity extends AppCompatActivity {
 
     public void onBackButton(View view) {
         //kill the activity here, give an option to save the note if needed
+        this.onSave(view);
         Intent i = new Intent();
         i.putExtra("NOTE_TITLE", originalNoteTitle);
         i.putExtra("NOTE_DESCRIPTION", originalNoteDescription);

@@ -5,12 +5,13 @@
     android:clickable="false"
     android:longClickable="false"
     android:id="@+id/list_view_item_layout"
-    android:background="@drawable/drawable_additem"
+    android:background="@drawable/list_view_item_selector"
     android:orientation="horizontal"
     android:gravity="fill_horizontal|top"
     android:descendantFocusability="blocksDescendants"
     android:focusable="false"
-    android:focusableInTouchMode="false">
+    android:focusableInTouchMode="false"
+    android:padding="4dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -46,8 +47,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/tap_to_add_a_description"
-            android:padding="2dp"
-            android:textColor="@color/textColor"
+            android:textColor="#66FFFFFF"
+            android:textSize="12sp"
             android:scrollHorizontally="true"
             android:singleLine="true"
             android:ellipsize="end"
@@ -70,15 +71,25 @@
         android:clickable="false"
         android:focusable="false"
         android:focusableInTouchMode="false">
-
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:background="#66000000"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:clickable="false">
+        </View>
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="75dp"
             android:layout_height="wrap_content"
             android:text="11/11/2011"
-            android:padding="10dp"
+            android:padding="3dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
             android:gravity="center"
             android:id="@+id/date"
-            android:textColor="@color/textColor"
+            android:textColor="#66FFFFFF"
+            android:textSize="12sp"
             android:clickable="false"
             android:focusable="false"
             android:focusableInTouchMode="false"/>
