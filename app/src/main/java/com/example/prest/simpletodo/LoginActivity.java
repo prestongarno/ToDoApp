@@ -7,14 +7,16 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.parse.LogInCallback;
 import com.parse.Parse;
 import com.parse.ParseAnalytics;
 import com.parse.ParseException;
@@ -65,7 +67,7 @@ public class LoginActivity extends AppCompatActivity {
         lin_layout_email_group = (LinearLayout) findViewById(R.id.lin_layout_email_group);
 
         //hide irrelevant views
-        txt_login_error_message.setVisibility(View.INVISIBLE);
+        txt_login_error_message.setText("");
         btn_cancel_register_mode.setVisibility(View.GONE);
         blank_view_button_gap.setVisibility(View.GONE);
         lin_layout_email_group.setVisibility(View.GONE);
@@ -101,14 +103,18 @@ public class LoginActivity extends AppCompatActivity {
                 this.onSignInAttempt(this.username, this.password);
 
             } else if (login_activity_mode.equals(LOGIN_ACTIVITY_MODE.SIGN_UP_MODE)) {
-                if (username.length() < 6) {
+                if (username.length() < 7) {
                     txt_login_error_message.setText("Username must be more than 5 characters!");
+                    btn_submit_login_credentials.setEnabled(true);
                 } else if (username.length() > 20) {
                     txt_login_error_message.setText("Username must be less than 20 characters!");
-                } else if (password.length() < 6) {
+                    btn_submit_login_credentials.setEnabled(true);
+                } else if (password.length() < 7) {
                     txt_login_error_message.setText("Password must be more than 5 characters!");
+                    btn_submit_login_credentials.setEnabled(true);
                 } else if (password.length() > 40) {
                     txt_login_error_message.setText("Password must be less than 40 characters!");
+                    btn_submit_login_credentials.setEnabled(true);
                 } else {
                     this.getUserPasswordReEntry();
                 }
@@ -119,23 +125,24 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void getUserPasswordReEntry() {
+        Log.d("Test", "getUserPasswordReEntry: enter password again");
         //pop up dialog to get user's re-entered password
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Re-Enter Password:");
         builder.setIcon(R.mipmap.ic_secure_account);
 
         //edit text for the password entry
-        final EditText et_password_re_enter = new EditText(getApplicationContext());
+        final EditText et_password_re_enter = new EditText(this);
+        et_password_re_enter.setTransformationMethod(PasswordTransformationMethod.getInstance());
 
-        //set dialog to builder
-        final AlertDialog alert = builder.create();
-
+        builder.setView(et_password_re_enter);
         builder.setPositiveButton("Submit", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 //input validation
-                if (et_password_re_enter.getText().toString().trim().isEmpty()) {
-                    Toast.makeText(LoginActivity.this.getBaseContext(), "Your passwords do not match!", Toast.LENGTH_LONG).show();
+                if (!et_password_re_enter.getText().toString().trim().equals(password)) {
+                    txt_login_error_message.setText("Your passwords do not match!");
+                    btn_submit_login_credentials.setEnabled(true);
                 } else {
                     //call sign up method
                     onSignUpAttempt(username, password, email);
@@ -146,32 +153,45 @@ public class LoginActivity extends AppCompatActivity {
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                alert.dismiss();
+                btn_submit_login_credentials.setEnabled(true);
             }
         });
 
         //show dialog
-        alert.show();
+        builder.show();
     }
 
     private void onSignInAttempt(String username, String password) {
         //input validation before sending it off
         if (this.checkUserInput(username, password) == false) {
-            txt_login_error_message.setVisibility(View.VISIBLE);
+            txt_login_error_message.setText("");
             //nothing here, error message sent in the checkUserInput() method
         } else {
             //// TODO: 9/5/2016 login logic here
-            Intent i = new Intent(LoginActivity.this, MainActivity.class);
-            i.putExtra("LOGIN_RESULT", "ACCESS_GRANTED");
-            //result_ox even when it's not ok lol
-            startActivity(i, new Bundle());
-            this.finish();
+            //getLayoutInflater().inflate(R.layout.loading_panel, (ViewGroup) findViewById(android.R.id.content));
+
+            ParseUser.logInInBackground(username, password, new LogInCallback() {
+                @Override
+                public void done(ParseUser user, ParseException e) {
+                    if (e == null) {
+                        //log in
+                        Intent i = new Intent(LoginActivity.this, MainActivity.class);
+                        i.putExtra("LOGIN_RESULT", "ACCESS_GRANTED");
+                        startActivity(i, new Bundle());
+                        LoginActivity.this.finish();
+                    } else {
+                        int eCode = e.getCode();
+                        txt_login_error_message.setText("Sorry, those credentials were invalid!");
+                    }
+                }
+            });
         }
     }
 
     private void onSignUpAttempt(String username, String password, String email) {
+        getLayoutInflater().inflate(R.layout.loading_panel, (ViewGroup) findViewById(android.R.id.content));
         if (this.checkUserInput(username, password, email) == false) {
-            txt_login_error_message.setVisibility(View.VISIBLE);
+            txt_login_error_message.setText("");
             //nothing here, error message sent in the checkUserInput() method
             btn_submit_login_credentials.setEnabled(true);
         } else if (this.checkUserInput(username, password, email) == true) {
@@ -194,6 +214,7 @@ public class LoginActivity extends AppCompatActivity {
                         btn_submit_login_credentials.setEnabled(true);
                         //get the result code for the sign up attempt
                         int error_code = e.getCode();
+                        Util.getInstance().printStackTrace(e, "SIGN UP");
                         switch (error_code) {
                             case (ParseException.EMAIL_TAKEN):
                                 txt_login_error_message.setText("Sorry, that email is already registered!");
@@ -214,20 +235,25 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void startSignUpMode(View view) {
-        //change submit button text
-        btn_submit_login_credentials.setText("Sign Up");
-        //change register button text
-        btn_start_register.setText("Already have an account? Sign in!");
+        if (this.login_activity_mode.equals(LOGIN_ACTIVITY_MODE.SIGN_IN_MODE)) {
+            this.login_activity_mode = LOGIN_ACTIVITY_MODE.SIGN_UP_MODE;
+            //change submit button text
+            btn_submit_login_credentials.setText("Sign Up");
+            //change register button text
+            btn_start_register.setText("Already have an account? Sign in!");
 
-        //show all relevant buttons
-        btn_cancel_register_mode.setVisibility(View.VISIBLE);
-        blank_view_button_gap.setVisibility(View.GONE);
-        txt_login_error_message.setVisibility(View.INVISIBLE);
-        lin_layout_email_group.setVisibility(View.VISIBLE);
+            //show all relevant buttons
+            btn_cancel_register_mode.setVisibility(View.VISIBLE);
+            blank_view_button_gap.setVisibility(View.GONE);
+            txt_login_error_message.setText("");
+            lin_layout_email_group.setVisibility(View.VISIBLE);
+        } else {
+            this.startSignInMode(view);
+        }
     }
 
     public void startSignInMode(View view) {
-
+        this.login_activity_mode = LOGIN_ACTIVITY_MODE.SIGN_IN_MODE;
         //change submit button text
         btn_submit_login_credentials.setText("Sign In");
         //change register button text
@@ -236,8 +262,8 @@ public class LoginActivity extends AppCompatActivity {
         //hide irrelevant views here
         btn_cancel_register_mode.setVisibility(View.GONE);
         blank_view_button_gap.setVisibility(View.GONE);
-        txt_login_error_message.setVisibility(View.INVISIBLE);
-        lin_layout_email_group.setVisibility(View.INVISIBLE);
+        txt_login_error_message.setText("");
+        lin_layout_email_group.setVisibility(View.GONE);
     }
 
     private boolean checkUserInput(String username, String password, String email){
@@ -245,13 +271,10 @@ public class LoginActivity extends AppCompatActivity {
 
         if(validator.isNullOrEmpty(username)) {
             txt_login_error_message.setText("Enter a username!");
-            return true;
+            return false;
         } else if (validator.isNullOrEmpty(password)) {
             txt_login_error_message.setText("Enter a password!");
-            return true;
-        } else if (validator.isValidPassword(password, false)) {
-            txt_login_error_message.setText("Password invalid!");
-            return true;
+            return false;
         } else {
             return true;
         }
@@ -264,15 +287,11 @@ public class LoginActivity extends AppCompatActivity {
         if(validator.isNullOrEmpty(username)) {
             txt_login_error_message.setText("Enter a username!");
             btn_submit_login_credentials.setEnabled(true);
-            return true;
+            return false;
         } else if (validator.isNullOrEmpty(password)) {
             txt_login_error_message.setText("Enter a password!");
             btn_submit_login_credentials.setEnabled(true);
-            return true;
-        } else if (validator.isValidPassword(password, false)) {
-            txt_login_error_message.setText("Password invalid!");
-            btn_submit_login_credentials.setEnabled(true);
-            return true;
+            return false;
         } else {
             return true;
         }

@@ -103,7 +103,7 @@
                 android:enabled="true"
                 android:focusable="true"
                 android:textColor="@color/textColor"
-                android:inputType="textPassword"
+                android:inputType="text"
                 android:maxWidth="150dp"
                 android:maxLines="1" />
         </LinearLayout>
@@ -173,9 +173,8 @@
             android:id="@+id/btn_start_register"
             android:layout_gravity="center_horizontal"
             android:onClick="startSignUpMode"
-            android:background="#66000000"
-            android:padding="5dp"
-            style="@style/Base.TextAppearance.AppCompat.Button"/>
+            android:background="@drawable/simple_button_selector"
+            android:padding="5dp"/>
 
     </LinearLayout>
 </RelativeLayout>

@@ -275,7 +275,6 @@ public class MainActivity extends AppCompatActivity {
                 public void onRefresh() {
                     manager.selectAllNotes(false);
                     itemsAdapter.displayCheckBoxes(false);
-                    // TODO: 8/10/2016 change loadnotes to a boolean return so we know if the data changed
                     manager.updateData(itemsAdapter, MainActivity.this);
                     itemsAdapter.notifyDataSetChanged();
                     manager.notifyAllObservers();
