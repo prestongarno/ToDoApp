@@ -1,6 +1,7 @@
 package com.example.prest.simpletodo;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.parse.ParseUser;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private final static float OPAQUE = 0.3f;
     private final int REQUEST_CODE_EDIT_NOTE = 35;
     private final int REQUEST_CODE_LOGIN_CREDENTIALS = 99;
+    private String sessionID;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -61,8 +64,22 @@ public class MainActivity extends AppCompatActivity {
 
         //Initialize Parse
         if (result == null) {
-            this.startActivity(intentLogin, null);
-            finish();
+            SharedPreferences sharedPreferences = getSharedPreferences("ToDoApp_Preferences", 0);
+            sessionID = sharedPreferences.getString("SESSION_ID", null);
+            if (sessionID == null) {
+                this.startActivity(intentLogin, null);
+                finish();
+            } else {
+                try {
+                    ParseUser.become(sessionID);
+                    Toast.makeText(this.getApplicationContext(), "Session Restored!", Toast.LENGTH_LONG).show();
+                } catch (com.parse.ParseException e) {
+                    Toast.makeText(this.getApplicationContext(), "Session Terminated!", Toast.LENGTH_LONG).show();
+                    this.startActivity(intentLogin, null);
+                    finish();
+                }
+            }
+
         } else if (result.equals("ACCESS_GRANTED")) {
             manager = new notesManager(getApplicationContext(), this);
 

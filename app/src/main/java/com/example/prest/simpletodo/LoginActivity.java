@@ -2,6 +2,7 @@ package com.example.prest.simpletodo;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -177,6 +178,9 @@ public class LoginActivity extends AppCompatActivity {
                         //log in
                         Intent i = new Intent(LoginActivity.this, MainActivity.class);
                         i.putExtra("LOGIN_RESULT", "ACCESS_GRANTED");
+                        SharedPreferences sharedPreferences = getSharedPreferences("ToDoApp_Preferences", 0);
+                        SharedPreferences.Editor edit = sharedPreferences.edit();
+                        edit.putString("SESSION_ID", user.getSessionToken());
                         startActivity(i, new Bundle());
                         LoginActivity.this.finish();
                     } else {
@@ -196,7 +200,7 @@ public class LoginActivity extends AppCompatActivity {
             btn_submit_login_credentials.setEnabled(true);
         } else if (this.checkUserInput(username, password, email) == true) {
             //passes input validation checks, attempt to register here
-            ParseUser user = new ParseUser();
+            final ParseUser user = new ParseUser();
             user.setUsername(username);
             user.setPassword(password);
             user.setEmail(email);
@@ -207,6 +211,9 @@ public class LoginActivity extends AppCompatActivity {
                     if (e == null) {
                         Intent i = new Intent(LoginActivity.this, MainActivity.class);
                         i.putExtra("LOGIN_RESULT", "ACCESS_GRANTED");
+                        SharedPreferences sharedPreferences = getSharedPreferences("ToDoApp_Preferences", 0);
+                        SharedPreferences.Editor edit = sharedPreferences.edit();
+                        edit.putString("SESSION_ID", user.getSessionToken());
                         startActivity(i, new Bundle());
                         LoginActivity.this.finish();
                     } else {
